@@ -136,56 +136,17 @@ handle(Path, Req) ->
   
   case CAtom of
     home -> 
-      IndexContents = case file:read_file("web/wonderland/index.html") of
+      IndexContents = case file:read_file("web/index.html") of
         {ok, Contents} -> Contents;
         _ -> "
           <html><head>
             <title>Hermes - Messenger</title>
             <style type='text/css' media='screen'>
             body { margin: 20px 0 0 0;}
-
-            .container {
-              width: 888px;
-              margin: 0 auto;
-              padding-top: 50px;
-              overflow: hidden;
-            	text-align: center;
-            }
-
-            #header {
-            	text-align: center;
-            	min-height: 120px;
-            	padding: 0;
-            	border-bottom: 3px solid #eee;
-            }
-            
-            #header .container {
-            	height: 88px;
-              width: auto;
-              margin: 0;
-            }            
-
-            #header h1 a {
-              color: #151515;
-            	text-align: left;
-              font-size: 62px;
-              font-family: Palatino, 'Palatino Linotype', Serif;  
-              text-decoration: none;
-            }
-
-            #header span {color: #BE3081;}
-            #content {width: 600px;text-align: left;}
+            h1 {color: red;}
             </style>
-          </head><body>
-          <div id=\"header\">
-            <div class=\"container\">
-              <h1><a href=\"/\">PoolParty</a></h1>
-            </div>
-          </div>          
-          <div id='content'>
-          <div class=\"container\">
-            <p>Insert content here</p>
-          </div></div>
+            </head><body>
+          <h1>Error</h1>
           </body></html>
         "
       end,
@@ -199,7 +160,7 @@ handle(Path, Req) ->
         'DELETE' -> ControllerAtom:delete(ControllerPath, decode_data_from_request(Req));
         Other -> subst("Other ~p on: ~s~n", [users, Other])
       end,
-      JsonBody = utils:jsonify(Body),
+      JsonBody = jsonify(Body),
       Req:ok({"text/json", JsonBody})
   end.
     
@@ -236,3 +197,11 @@ top_level_request(Path) ->
     [CleanPath|_Others] -> CleanPath;
     [] -> "home"
   end.
+
+jsonify(JsonifiableBody) ->
+  [ ?JSON_ENCODE({
+        struct, [
+          JsonifiableBody
+        ]
+    })
+  ].
