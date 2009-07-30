@@ -1,12 +1,12 @@
 {application, hermes, [
         {description, "Hermes"},
         {vsn, "0.1"},
-        {modules, [rest_server]},
+        {modules, [hermes]},
         {env, [
-          {port, 9999}
+          {port, 8642}
         ]},
-        {registered, [rest_server]},
+        {registered, [hermes]},
         {applications, [kernel, stdlib]},
-        {mod, {rest_server, []}}
+        {mod, {hermes, []}}
 ]}.
 
