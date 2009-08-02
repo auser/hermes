@@ -1,6 +1,14 @@
 -module (utils).
+-include ("hermes.hrl").
 -compile (export_all).
 -define(JSON_ENCODE(V), mochijson2:encode(V)).
+
+%%--------------------------------------------------------------------
+%% Function: get_rrd_location (Module) -> {ok, Filename}
+%% Description: Get the location of an rrd file
+%%--------------------------------------------------------------------
+get_rrd_location(Module) ->
+  io_lib:fwrite("~p/~p.rrd", [?RRD_DIRECTORY, Module]).
 
 % utils:delete(a, [{port, "90"}, {a, "danger"}]). => [{port,"90"}]
 % utils:delete(a, [{port, "90"}, {ab, "danger"}]). => [{port,"90"},{ab,"danger"}]

@@ -11,8 +11,9 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/1]).
 -export ([add_monitor/1, list_monitors/0]).
+-export ([get_average/1, get_average_over/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -30,11 +31,26 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link() ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(Monitors) ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [Monitors], []).
 
-add_monitor(Module) ->
-  gen_server:call(?MODULE, {add_monitor, Module}).
+%%--------------------------------------------------------------------
+%% Function: add_monitor (module) -> {ok, Pid}
+%% Description: Add a monitor module to the list of monitors
+%%--------------------------------------------------------------------
+add_monitor(Module) -> gen_server:call(?MODULE, {add_monitor, Module}).
+
+%%--------------------------------------------------------------------
+%% Function: get_average (Module) -> {ok, Fetched}
+%% Description: Get the average of a specific module
+%%--------------------------------------------------------------------
+get_average(Module) -> gen_server:call(?MODULE, {get_average, Module}).
+
+%%--------------------------------------------------------------------
+%% Function: get_average_over (Module, Seconds) -> {ok, Fetched}
+%% Description: Get the average of a specific module over Seconds
+%%--------------------------------------------------------------------
+get_average_over(Module, Seconds) -> gen_server:call(?MODULE, {get_average, Module, Seconds}).
 
 list_monitors() -> gen_server:call(?MODULE, {list_monitors}).
 %%====================================================================
@@ -48,8 +64,12 @@ list_monitors() -> gen_server:call(?MODULE, {list_monitors}).
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([]) ->
-  {ok, #state{}}.
+init(Monitors) ->
+  [Mon] = Monitors,
+  State = #state{
+    monitors = Mon
+   },
+  {ok, State}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -63,10 +83,17 @@ init([]) ->
 handle_call({list_monitors}, _From, #state{monitors = Monitors} = State) ->
   ?LOG_MESSAGE(io_lib:fwrite("Monitors: ~p~n", [Monitors])),
   {reply, [Monitors], State};
-  
+
 handle_call({add_monitor, Module}, _From, #state{monitors = Monitors} = _State) ->
   NewState = #state{monitors = lists:append([Monitors, [Module]])},
   {reply, ok, NewState};
+
+handle_call({get_average, Module, Seconds}, _From, State) ->
+  Fetched = handle_get_average(Module, Seconds),
+  {reply, Fetched, State};
+handle_call({get_average, Module}, _From, State) ->
+  Fetched = handle_get_average(Module, 60),
+  {reply, Fetched, State};
   
 handle_call(_Request, _From, State) ->
   Reply = ok,
@@ -110,3 +137,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+%%--------------------------------------------------------------------
+%% Function: handle_get_average (Module, Seconds) -> {ok, Averages}
+%% Description: Handle the fetching of averages for rrd
+%%              over the last Seconds
+%%--------------------------------------------------------------------
+handle_get_average(Module, Last) ->
+  {Mega, Secs, _} = now(),
+  Start = Mega*1000000 + Secs - Last,
+  {ok, Fetched} = erlrrd:fetch(io_lib:fwrite("~p/~p.rrd AVERAGE --start ~p --end ~p", [?RRD_DIRECTORY, Module, Start, Start])),
+  io:format("Fetched: ~p~n", [Fetched]),
+  Fetched.

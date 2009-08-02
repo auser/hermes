@@ -4,11 +4,16 @@
 -define (MAXIMUM_RESTARTS, 10).
 -define (MAX_DELAY_TIME, 60).
 
--define (DEFAULT_CONFIG, [
-					{port, 8642},
-					{module, hermes}
-				]).
-				
+-define (USER_CONFIG_LOCATION, "/etc/poolparty/hermes.cfg").
+-define (DEFAULT_CONFIG_LOCATION, "include/config.cfg").
+
+-define (TESTING, true).
+
+-define (RRD_DIRECTORY, case ?TESTING of
+  true -> "test/fixtures";
+  false -> "/var/hermes"
+end).
+
 -define (LOG_MESSAGE (Message), hermes_logger:append({erlang:localtime(), ?MODULE, ?LINE, Message})).
 -define (DEBUG_LOG (Bool, Message, Opts), 
   case Bool of true -> 
