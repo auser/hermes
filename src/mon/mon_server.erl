@@ -70,17 +70,7 @@ list_monitors() -> gen_server:call(?MODULE, {list_monitors}).
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init(Args) ->
-  Module = case proplists:get_value(module, Args) of
-    undefined -> hermes;
-    Else -> Else
-  end,
-  Monitors = case application:get_env(Module, monitors) of
-    undefined ->
-      {ok, Config} = config:read(),
-      {ok, Mons} = config:get(monitors, Config),
-      Mons;
-    {ok, Ms} -> Ms
-  end,
+  Monitors = get_monitors(Args),
   State = #state{
     monitors = Monitors
    },
@@ -96,8 +86,9 @@ init(Args) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({list_monitors}, _From, #state{monitors = Monitors} = State) ->
-  ?LOG_MESSAGE(io_lib:fwrite("Monitors: ~p~n", [Monitors])),
-  {reply, [Monitors], State};
+  Mons = get_monitors(Monitors),
+  ?LOG_MESSAGE(io_lib:fwrite("Monitors: ~p~n", [Mons])),
+  {reply, Mons, State};
 
 handle_call({add_monitor, Module}, _From, #state{monitors = Monitors} = _State) ->
   NewState = #state{monitors = lists:append([Monitors, [Module]])},
@@ -159,19 +150,25 @@ code_change(_OldVsn, State, _Extra) ->
 %%              over the last Seconds
 %%--------------------------------------------------------------------
 handle_get_average(Module, Last) ->
-  {Mega, Secs, _} = now(),
-  StartTime = Mega*1000000 + Secs - Last,
+  KnownMonitors = get_monitors(Module),
   
-  % Method
-  M = lists:append([
-    ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", % File Module.rrd
-    " AVERAGE ",
-    " --start ", erlang:integer_to_list(StartTime),
-    " --end ", erlang:integer_to_list(StartTime + Last)
-  ]),
-  
-  {ok, Fetched} = erlrrd:fetch(M),
-  parse_rrd_return(Fetched).
+  case lists:member(Module, KnownMonitors) of
+    false -> {unknown_monitor, []};
+    true ->
+      {Mega, Secs, _} = now(),
+      StartTime = Mega*1000000 + Secs - Last,
+
+      % Method
+      M = lists:append([
+        ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", % File Module.rrd
+        " AVERAGE ",
+        " --start ", erlang:integer_to_list(StartTime),
+        " --end ", erlang:integer_to_list(StartTime + Last)
+      ]),
+
+      {ok, Fetched} = erlrrd:fetch(M),
+      parse_rrd_return(Fetched)
+  end.
 
 %%--------------------------------------------------------------------
 %% Function: parse_rrd_return (Arr) -> {ok, Parsed}
@@ -197,3 +194,33 @@ collect_rrd_values(Str) ->
     F -> erlang:list_to_float(F)
   end,
   {Time, Val}.
+
+%%--------------------------------------------------------------------
+%% Function: get_monitors (Args) -> {ok, Monitors}
+%% Description: Get the monitors either in the known directory or at the
+%% behest of the user on the command-line
+%%--------------------------------------------------------------------
+get_monitors(Args) ->
+  case file:list_dir(?RRD_DIRECTORY) of
+    {error, _Reason} -> get_monitors_from_commandline(Args);
+    {ok, FileList} ->
+      lists:map(
+        fun(Filename) ->
+          [Name|_] = string:tokens(Filename, "."),
+          erlang:list_to_atom(Name)
+        end, FileList)
+  end.
+
+
+get_monitors_from_commandline(Args) ->
+  Module = case proplists:get_value(module, Args) of
+    undefined -> hermes;
+    Else -> Else
+  end,
+  case application:get_env(Module, monitors) of
+    undefined ->
+      {ok, Config} = config:read(),
+      {ok, Mons} = config:get(monitors, Config),
+      Mons;
+    {ok, Ms} -> Ms
+  end.

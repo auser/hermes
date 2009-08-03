@@ -2,11 +2,15 @@
 -export ([get/1, post/2, put/2, delete/2]).
 
 get([]) ->
-  [Monitors] = mon_server:list_monitors(),
+  Monitors = mon_server:list_monitors(),
   MonitorData = lists:map(
     fun(Monitor) ->
-      Vals = handle_get_monitor_over_time(erlang:atom_to_list(Monitor), 600),
-      {struct, [{Monitor, Vals}]}
+      case Monitor of
+        unknown_monitor -> unknown_monitor;
+        _Else ->
+          Vals = handle_get_monitor_over_time(erlang:atom_to_list(Monitor), 600),
+          {struct, [{Monitor, Vals}]} 
+      end
     end,
     Monitors),
   {"monitors", MonitorData };

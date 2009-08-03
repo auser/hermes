@@ -16,7 +16,7 @@ turn_equal_to_json(Str) ->
 %% Description: Create fixture rrd files in the fixtures directory
 %%--------------------------------------------------------------------
 create_fixture_rrds() ->
-  Fixtures = [cpu, memory],
+  Fixtures = [cpu, memory, disk],
   {Mega, Secs, _} = now(),
   StartTime = Mega*1000000 + Secs,
   Ras = lists:append([" --start ", erlang:integer_to_list(StartTime), 
