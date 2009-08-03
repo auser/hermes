@@ -145,7 +145,37 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 handle_get_average(Module, Last) ->
   {Mega, Secs, _} = now(),
-  Start = Mega*1000000 + Secs - Last,
-  {ok, Fetched} = erlrrd:fetch(io_lib:fwrite("~p/~p.rrd AVERAGE --start ~p --end ~p", [?RRD_DIRECTORY, Module, Start, Start])),
-  io:format("Fetched: ~p~n", [Fetched]),
-  Fetched.
+  StartTime = Mega*1000000 + Secs - Last,
+  
+  % Method
+  M = lists:append([
+    ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", % File Module.rrd
+    " AVERAGE ",
+    " --start ", erlang:integer_to_list(StartTime),
+    " --end ", erlang:integer_to_list(StartTime + Last)
+  ]),
+  
+  {ok, Fetched} = erlrrd:fetch(M),
+  parse_rrd_return(Fetched).
+
+%%--------------------------------------------------------------------
+%% Function: parse_rrd_return (Arr) -> {ok, Parsed}
+%% Description: Take the output from erlrrd and turn it into something usable
+% [["                            cpu"],
+%  [[]],
+%  ["1249284300: 5.0000000000e-01"]]
+%%--------------------------------------------------------------------
+parse_rrd_return(Arr) ->
+  parse_rrd_return_1(Arr).
+
+parse_rrd_return_1([[Desc]|Rest]) ->
+  Module = erlang:list_to_atom(string:strip(Desc)),
+  [_|ArrOfValues] = Rest,
+  Values = lists:map(fun([Line]) -> collect_rrd_values(Line) end, ArrOfValues),
+  {Module, Values}.
+ 
+collect_rrd_values([]) -> {};
+collect_rrd_values(Str) ->
+  [Time|[V]] = string:tokens(Str, ":"),
+  Val = erlang:list_to_float(string:strip(V)),
+  {Time, Val}.
