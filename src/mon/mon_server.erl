@@ -177,5 +177,8 @@ parse_rrd_return_1([[Desc]|Rest]) ->
 collect_rrd_values([]) -> {};
 collect_rrd_values(Str) ->
   [Time|[V]] = string:tokens(Str, ":"),
-  Val = erlang:list_to_float(string:strip(V)),
+  Val = case string:strip(V) of
+    "nan" -> 0.0;
+    F -> erlang:list_to_float(F)
+  end,
   {Time, Val}.
