@@ -32,7 +32,6 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Args) ->
-  io:format("Received ~p in ~p~n", [Args, ?MODULE]),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
 
 %%--------------------------------------------------------------------
