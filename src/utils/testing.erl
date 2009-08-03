@@ -11,11 +11,21 @@ turn_equal_to_json(Str) ->
     end, Set),
   lists:map(fun([K|V]) -> "{'"++K++"':'"++erlang:list_to_binary(V)++"'}" end, ArrSet).
  
+%%--------------------------------------------------------------------
+%% Function: create_fixture_rrds () -> {ok}
+%% Description: Create fixture rrd files in the fixtures directory
+%%--------------------------------------------------------------------
 create_fixture_rrds() ->
-  Ras = "DS:cpu:GAUGE:600:0:1250000 RRA:AVERAGE:0.5:1:24 RRA:LAST:0.5:6:10",
+  Fixtures = [cpu, memory],
+  Ras = " DS:cpu:GAUGE:600:0:1250000 RRA:AVERAGE:0.5:1:24 RRA:LAST:0.5:6:10",
+  % Create the rrds
   lists:map(
     fun(Module) ->
-      Meth = io_lib:fwrite("~w/~w.rrd", [?RRD_DIRECTORY, erlang:atom_to_list(Module)]),
-      io:format("Using ~p to create a new archive~n", [Meth]),
+      Meth = lists:append([?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", Ras]),
       erlrrd:create(Meth)
-    end, [cpu, memory]).
+    end, Fixtures),
+  % Update the rrds with some fake data
+  lists:map(
+    fun(Module) -> 
+      io:format("Creating fixture data for ~p~n", [Module])
+    end, Fixtures).

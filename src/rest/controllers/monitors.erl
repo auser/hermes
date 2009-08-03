@@ -4,6 +4,10 @@
 get([]) ->
   [Monitors] = mon_server:list_monitors(),
   {"monitors", Monitors };
+
+get([Monitor]) ->
+  Out = erlang:list_to_binary(lists:append([Monitor, " - Add data"])),
+  {"monitor", Out };
   
 get(_Path) -> {"error", <<"unhandled">>}.
 
