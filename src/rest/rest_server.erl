@@ -17,7 +17,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--export ([print_banner/0]).
+-export ([print_banner/1]).
 -record(state, {
         
         }).
@@ -32,6 +32,7 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Args) ->
+  io:format("Got args: ~p in ~p:start_link~n", [Args, ?MODULE]),
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
 
 %%====================================================================
@@ -47,22 +48,35 @@ start_link(Args) ->
 %%--------------------------------------------------------------------
 % TODO: Update port args with config variables
 init([Args]) ->
-	print_banner(),
-  start_mochiweb(Args),
+	print_banner(Args),
+	
+	Module = case proplists:get_value(module, Args) of
+    undefined -> hermes;
+    Else -> Else
+  end,
+	StartArgs = lists:map(fun (Var) -> {ok, Value} = application:get_env(Module, Var), Value end, [port]),
+	
+  start_mochiweb(StartArgs),
   {ok, #state{}}.
 
 
-print_banner() ->
-    io:format("~s~n~s~n~n",
-              [?SOFTWARE_NAME, ?COPYRIGHT_MESSAGE]),
-    Settings =  [
-                  {"node ", node()}
-                ],
-    DescrLen = lists:max([length(K) || {K, _V} <- Settings]),
-    Format = "~-" ++ integer_to_list(DescrLen) ++ "s: ~s~n",
-    lists:foreach(fun ({K, V}) -> io:format(Format, [K, V]) end, Settings),
-		io:format("---------------------------------\n"),
-    io:nl().
+print_banner(Args) ->
+  Module = case proplists:get_value(module, Args) of
+    undefined -> hermes;
+    Else -> Else
+  end,
+  io:format("~s~n~s~n~n",
+            [?SOFTWARE_NAME, ?COPYRIGHT_MESSAGE]),
+  [Port] = lists:map(fun (Var) -> {ok, Value} = application:get_env(Module, Var), Value end, [port]),
+  Settings =  [
+                {"node ", node()},
+                {"port ", erlang:integer_to_list(Port)}
+              ],
+  DescrLen = lists:max([length(K) || {K, _V} <- Settings]),
+  Format = "~-" ++ integer_to_list(DescrLen) ++ "s: ~s~n",
+  lists:foreach(fun ({K, V}) -> io:format(Format, [K, V]) end, Settings),
+	io:format("---------------------------------\n"),
+  io:nl().  
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |

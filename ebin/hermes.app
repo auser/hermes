@@ -3,7 +3,8 @@
         {vsn, "0.1"},
         {modules, [hermes]},
         {env, [
-          {port, 8642}
+          {port, 8642},
+          {monitors, [cpu, memory]}
         ]},
         {registered, [hermes]},
         {applications, [kernel, stdlib]},

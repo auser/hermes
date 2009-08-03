@@ -3,7 +3,13 @@
 
 get([]) ->
   [Monitors] = mon_server:list_monitors(),
-  {"monitors", Monitors };
+  MonitorData = lists:map(
+    fun(Monitor) ->
+      Vals = handle_get_monitor_over_time(erlang:atom_to_list(Monitor), 600),
+      {struct, [{Monitor, Vals}]}
+    end,
+    Monitors),
+  {"monitors", MonitorData };
 
 get([Monitor]) ->
   Vals = handle_get_monitor_over_time(Monitor, 600),

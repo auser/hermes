@@ -31,8 +31,9 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Monitors) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Monitors], []).
+start_link(Args) ->
+  io:format("Received ~p in ~p~n", [Args, ?MODULE]),
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
 
 %%--------------------------------------------------------------------
 %% Function: add_monitor (module) -> {ok, Pid}
@@ -52,7 +53,12 @@ get_average(Module) -> gen_server:call(?MODULE, {get_average, Module}).
 %%--------------------------------------------------------------------
 get_average_over(Module, Seconds) -> gen_server:call(?MODULE, {get_average, Module, Seconds}).
 
+%%--------------------------------------------------------------------
+%% Function: list_monitors () -> {ok, List}
+%% Description: Get the list of monitors and reasonable statistics
+%%--------------------------------------------------------------------
 list_monitors() -> gen_server:call(?MODULE, {list_monitors}).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -64,10 +70,20 @@ list_monitors() -> gen_server:call(?MODULE, {list_monitors}).
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init(Monitors) ->
-  [Mon] = Monitors,
+init(Args) ->
+  Module = case proplists:get_value(module, Args) of
+    undefined -> hermes;
+    Else -> Else
+  end,
+  Monitors = case application:get_env(Module, monitors) of
+    undefined ->
+      {ok, Config} = config:read(),
+      {ok, Mons} = config:get(monitors, Config),
+      Mons;
+    {ok, Ms} -> Ms
+  end,
   State = #state{
-    monitors = Mon
+    monitors = Monitors
    },
   {ok, State}.
 

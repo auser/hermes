@@ -4,8 +4,7 @@
 
 -export([start/2, stop/1]).
 
-start(Type, _Args) ->
-  {ok, Config} = config:read(),
-  hermes_sup:start(Type, Config).
+start(Type, Args) ->  
+  hermes_sup:start(Type, Args).
 
 stop(_State) -> ok.

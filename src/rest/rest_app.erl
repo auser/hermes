@@ -4,8 +4,6 @@
 -export([start/2, stop/1]).
 
 start(_Type, Args) ->
-  Module = proplists:get_value(module, Args),
-  StartArgs = lists:map(fun (Var) -> {ok, Value} = application:get_env(Module, Var), Value end, [port]),
-  rest_server_sup:start_link(StartArgs).
+  rest_server_sup:start_link(Args).
 
 stop(_State) -> ok.
