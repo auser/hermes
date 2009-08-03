@@ -4,10 +4,12 @@
 -define (MAXIMUM_RESTARTS, 10).
 -define (MAX_DELAY_TIME, 60).
 
--define (USER_CONFIG_LOCATION, "/etc/poolparty/hermes.cfg").
--define (DEFAULT_CONFIG_LOCATION, "include/config.cfg").
-
 -define (TESTING, true).
+
+-define (CONFIG_FILE, case ?TESTING of
+  true -> "include/config.cfg";
+  false -> "/etc/poolparty/hermes.cfg"
+end).
 
 -define (RRD_DIRECTORY, case ?TESTING of
   true -> "test/fixtures";

@@ -12,16 +12,14 @@
 
 %% API
 -export([start_link/1]).
--export ([add_monitor/1, list_monitors/0]).
+-export ([list_monitors/0]).
 -export ([get_average/1, get_average_over/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {
-        monitors = []
-        }).
+-record(state, {}).
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -33,12 +31,6 @@
 %%--------------------------------------------------------------------
 start_link(Args) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
-
-%%--------------------------------------------------------------------
-%% Function: add_monitor (module) -> {ok, Pid}
-%% Description: Add a monitor module to the list of monitors
-%%--------------------------------------------------------------------
-add_monitor(Module) -> gen_server:call(?MODULE, {add_monitor, Module}).
 
 %%--------------------------------------------------------------------
 %% Function: get_average (Module) -> {ok, Fetched}
@@ -69,12 +61,8 @@ list_monitors() -> gen_server:call(?MODULE, {list_monitors}).
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init(Args) ->
-  Monitors = get_monitors(Args),
-  State = #state{
-    monitors = Monitors
-   },
-  {ok, State}.
+init(_Args) ->
+  {ok, #state{}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -85,14 +73,10 @@ init(Args) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({list_monitors}, _From, #state{monitors = Monitors} = State) ->
-  Mons = get_monitors(Monitors),
+handle_call({list_monitors}, _From, State) ->
+  Mons = get_monitors(),
   ?LOG_MESSAGE(io_lib:fwrite("Monitors: ~p~n", [Mons])),
   {reply, Mons, State};
-
-handle_call({add_monitor, Module}, _From, #state{monitors = Monitors} = _State) ->
-  NewState = #state{monitors = lists:append([Monitors, [Module]])},
-  {reply, ok, NewState};
 
 handle_call({get_average, Module, Seconds}, _From, State) ->
   Fetched = handle_get_average(Module, Seconds),
@@ -150,7 +134,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%              over the last Seconds
 %%--------------------------------------------------------------------
 handle_get_average(Module, Last) ->
-  KnownMonitors = get_monitors(Module),
+  KnownMonitors = get_monitors(),
   
   case lists:member(Module, KnownMonitors) of
     false -> {unknown_monitor, []};
@@ -200,27 +184,14 @@ collect_rrd_values(Str) ->
 %% Description: Get the monitors either in the known directory or at the
 %% behest of the user on the command-line
 %%--------------------------------------------------------------------
-get_monitors(Args) ->
+get_monitors() ->
   case file:list_dir(?RRD_DIRECTORY) of
-    {error, _Reason} -> get_monitors_from_commandline(Args);
+    {error, Reason} -> 
+      Reason;
     {ok, FileList} ->
       lists:map(
         fun(Filename) ->
           [Name|_] = string:tokens(Filename, "."),
           erlang:list_to_atom(Name)
         end, FileList)
-  end.
-
-
-get_monitors_from_commandline(Args) ->
-  Module = case proplists:get_value(module, Args) of
-    undefined -> hermes;
-    Else -> Else
-  end,
-  case application:get_env(Module, monitors) of
-    undefined ->
-      {ok, Config} = config:read(),
-      {ok, Mons} = config:get(monitors, Config),
-      Mons;
-    {ok, Ms} -> Ms
   end.

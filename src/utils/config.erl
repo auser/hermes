@@ -8,9 +8,9 @@
 %% Description: Read the configuration data
 %%--------------------------------------------------------------------
 read() ->
-  case read_1(?USER_CONFIG_LOCATION) of
+  case read_1(?CONFIG_FILE) of
     {ok, C} -> {ok, C};
-    {error, enoent} -> {ok, read_1(?DEFAULT_CONFIG_LOCATION)};
+    {error, enoent} -> {error};
     Err -> Err
   end.
  
