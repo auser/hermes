@@ -11,6 +11,97 @@ turn_equal_to_json(Str) ->
     end, Set),
   lists:map(fun([K|V]) -> "{'"++K++"':'"++erlang:list_to_binary(V)++"'}" end, ArrSet).
  
+spawn_irb() ->
+  Cmd = lists:flatten([
+    os:find_executable("irb"), 
+    " --simple-prompt",
+    " -r/Users/alerner/Development/ruby/mine/poolparty/lib/poolparty",
+    " -r/Users/alerner/Development/ruby/mine/poolparty/examples/simple.rb"
+  ]),
+  io:format("Running: ~p~n", [Cmd]),
+  open_port({spawn, Cmd}, [ eof, {line, 10}, stream, exit_status ]).
+  
+irb_get(Port, Cmd) ->  
+  Rand = lists:append(erlang:integer_to_list(1), erlang:integer_to_list(random:uniform(100000))),
+  SendCommand = lists:append([Cmd, ".to_s+", Rand, ".to_s", "\n"]),
+  io:format("Sending: ~p~n", [SendCommand]),
+  irb_get(Port, SendCommand, Rand).
+  
+irb_get(Port, Cmd, Rand) ->
+  Timeout = 10000,
+  io:format("Sending: ~p~n", [Cmd]),
+  port_command(Port, Cmd),
+  case collect_response(Port, Cmd, Rand, Timeout) of
+    {response, []}  -> 
+      irb_get(Port, Cmd, Rand);
+    {response, O}   -> O
+  end.
+
+collect_response(Port, Command, Rand, Timeout) ->
+    collect_response(Port, [], [], Command, Rand, Timeout ).
+
+collect_response( Port, RespAcc, LineAcc, Command, Rand, Timeout) ->
+    receive
+      {Port, {data, {eol, Command}}} ->
+        collect_response(Port, RespAcc, [], Command, Rand, Timeout);
+      {Port, {data, {eol, ">> " ++ _Eh }}} ->
+        collect_response(Port, RespAcc, [], Command, Rand, Timeout);
+      {Port, {data, {eol, End}}} ->
+        io:format("Got eol: ~p in ~p~n", [lists:flatten([LineAcc,End]), Rand]),
+        String = lists:flatten([LineAcc,End]),
+        case regexp:first_match(String, ">> "++clean_regexp(Command)) of
+          nomatch ->
+            io:format("Not returning the command: ~p, but ~p~n", [Command, String]),
+            {response, irb_strip_from(LineAcc, Rand)};
+          {match, _, _} -> 
+            io:format("The command: ~p~n", [Command]),
+            {response, []}
+        end;        
+      {Port, {data, {noeol, Result}}} ->
+        io:format("Got noeol: ~p~n", [Result]),
+        collect_response(Port, RespAcc, [LineAcc|Result], Command, Rand, Timeout)
+
+    after Timeout -> 
+      {response, lists:flatten(lists:append([RespAcc]))}
+    end.     
+
+%%--------------------------------------------------------------------
+%% Function: strip_from (Str, Regexp) -> {ok, NewStr} | {error, Reason}
+%% Description: Remove the appends that irb puts on to the response
+%%--------------------------------------------------------------------
+irb_strip_from(Input, Appended) ->
+  {ok, String, _} = regexp:gsub(Input, "\"", ""),
+  {ok, Str, _} = regexp:sub(String, "=> ", ""),
+  case regexp:first_match(Str, Appended) of
+    nomatch -> 
+      io:format("NO MATCH"),
+      {error, "no match"};
+    {match, Start, _} ->
+      Res = lists:sublist(Str, Start-1),
+      % io:format("Got it with ~p (from ~p [~p])~n", [Res, String, Start]),
+      {ok, Res}
+  end.
+  
+
+clean_regexp(String) ->
+  Ns1 = clean_regexp_brackets(String),
+  clean_regexp_periods(Ns1).
+
+clean_regexp_periods(String) ->
+  case regexp:gsub(String, "\\.", "\\.") of
+    {ok, NS1, _} -> NS1;
+    _ -> String
+  end.
+clean_regexp_brackets(String) ->
+  Ns = case regexp:gsub(String, "\\[", "\\[") of
+    {ok, NS, _} -> NS;
+    _ -> String
+  end,
+  case regexp:gsub(Ns, "\\]", "\\]") of
+    {ok, NS1, _} -> NS1;
+    _ -> Ns
+  end.
+
 %%--------------------------------------------------------------------
 %% Function: create_fixture_rrds () -> {ok}
 %% Description: Create fixture rrd files in the fixtures directory
