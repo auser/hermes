@@ -8,11 +8,12 @@
 
 -module (ambassador).
 -behaviour(gen_server).
+-include ("hermes.hrl").
 
 %% API
 -export([start_link/0]).
 -export ([
-          ask_thrift/1,
+          ask/2,
           handle_function/2,
           get/1
           ]).
@@ -22,6 +23,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
+
+-define (PROTO, thrift_ambassador).
 -record(state, {
         }).
 
@@ -30,9 +33,9 @@
 %%====================================================================
 %% API
 %%====================================================================
-ask_thrift(Msg) ->
-  Pid = get_thrift_pid(),
-  thrift_client:call(Pid, get, [Msg]).
+ask(Fun, Args) ->
+  Pid = get_proto_pid(),
+  ?PROTO:call(Pid, Fun, [Args]).
 
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
@@ -42,14 +45,17 @@ start_link() ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 stop() ->
-  thrift_socket_server:stop(get_hostname()),
+  ?PROTO:stop(),
   ok.
 
 
-%%%%% THRIFT INTERFACE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% PROTO INTERFACE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+handle_function(Function, Args) when is_atom(Function), is_list(Args) ->
+  [A|_] = Args,
+  handle_function(Function, A);
+  
 handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
-    % ?infoFmt("handling thrift stuff in PID ~p~n", [self()]),
     case apply(?MODULE, Function, tuple_to_list(Args)) of
         ok -> {ok, "handled"};
         Reply -> {reply, Reply}
@@ -73,26 +79,11 @@ get(Key) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-  ThriftPort = case config:get(thrift_port) of
+  Port = case config:get(proto_port) of
     {error, _} -> 11223;
     {ok, V} -> V
   end,
-  thrift_socket_server:start([
-    {port, ThriftPort},
-    {name, ambassador},
-    {service, ambassador_thrift},
-    {handler, ?MODULE},
-    {socket_opts, [{recv_timeout, infinity}]}]),
-    
-  {ok, HostName} = get_hostname(),
-  loudmouth:banner([
-    "Started thrift",
-    {"thrift_port", erlang:integer_to_list(ThriftPort)},
-    {"thrift client hostname", HostName}
-  ]),
-  
-  thrift_client:start_link("localhost", ThriftPort, ambassador_thrift),
-  
+  ?PROTO:start([{proto_port, Port}, {module, ?MODULE}]),
   {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -105,6 +96,7 @@ init([]) ->
 %% Description: Handling call messages
 %%-------------------------------------------------------------------- 
 handle_call({call, Function, Args}, _From, State) ->
+  ?INFO("Calling ~p(~p)~n", [Function, Args]),
   Out = handle_function(Function, Args),
   {reply, Out, State};
   
@@ -152,14 +144,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 
 %%--------------------------------------------------------------------
-%% Function: get_hostname () -> HostName
-%% Description: Quick accessor to local node's hostname
-%% TODO: Make a commandline-passable-option
+%% Function: get_proto_pid () -> {ok, Pid}
+%% Description: Get the proto_client pid
 %%--------------------------------------------------------------------
-get_hostname() -> inet:gethostname().
-
-%%--------------------------------------------------------------------
-%% Function: get_thrift_pid () -> {ok, Pid}
-%% Description: Get the thrift_client pid
-%%--------------------------------------------------------------------
-get_thrift_pid() -> erlang:whereis(ambassador).
+get_proto_pid() -> ?PROTO:get_pid().

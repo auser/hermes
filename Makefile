@@ -3,14 +3,14 @@ VERSION					= 0.0.1
 CC							= erlc
 ERL							= erl
 EBIN						= ebin
-CFLAGS					= -I include -pa $(EBIN)
+CFLAGS					= +debug_info -W0 -I include -pa $(EBIN) -I gen-erl/
 COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
 EBIN_DIRS				= $(wildcard deps/*/ebin)
 WEB_DIR					= web/
 WONDERLAND_DIR	= $(WEB_DIR)/wonderland
 APP							= hermes
 
-all: deps ebin compile
+all: ebin compile
 all_boot: all boot
 wonderland_boot: wonderland all_boot
 start: all start_all
@@ -26,6 +26,8 @@ mochi:
 	@(cd deps/mochiweb;$(MAKE))
 thrift:
 	@(cd deps/thrift;$(MAKE))
+	thrift --gen erl thrift/hermes.thrift
+	@(mv gen-erl/hermes*.hrl include)
 	
 compile:
 	@$(ERL) -pa $(EBIN_DIRS) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'

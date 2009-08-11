@@ -8,9 +8,13 @@
 
 -module (hermes_logger).
 -behaviour(gen_server).
+-include ("hermes.hrl").
 
 %% API
--export([start_link/0, stop/0, append/1, print/0]).
+-export([start_link/0, stop/0, append/1, print/0, 
+          error/1,error/2,
+          info/1,info/2
+        ]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -33,7 +37,13 @@ start_link() ->
 
 stop() ->
   gen_server:call(?MODULE, stop).
-  
+
+error(Msg) -> error(Msg, []).
+error(Msg, Args) -> error_logger:error_msg(lists:flatten(io_lib:format(Msg, Args))).
+
+info(Msg) -> info(Msg, []).
+info(Msg, Args) -> error_logger:info_msg(lists:flatten(io_lib:format(Msg, Args))).
+
 append(Log) ->
   gen_server:call(?MODULE, {append, Log}).
 
@@ -52,6 +62,12 @@ print() ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
+  LogPath = case application:get_env(hermes, log_path) of
+    { ok, Log } ->  Log;
+    undefined -> "logs/hermes.log"
+  end,
+  error_logger:logfile({open, LogPath}),
+  error_logger:tty(?TESTING),
   {ok, #state{}}.
 
 %%--------------------------------------------------------------------
