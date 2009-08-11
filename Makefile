@@ -10,7 +10,7 @@ WEB_DIR					= web/
 WONDERLAND_DIR	= $(WEB_DIR)/wonderland
 APP							= hermes
 
-all: mochi ebin compile
+all: deps ebin compile
 all_boot: all boot
 wonderland_boot: wonderland all_boot
 start: all start_all
@@ -20,9 +20,13 @@ wonderland:
 	[ -d $(WONDERLAND_DIR) ] || (mkdir $(WEB_DIR) && cd $(WEB_DIR) && git clone git://github.com/auser/wonderland.git)
 	cd $(WONDERLAND_DIR) && git pull origin master
 
+deps: mochi thrift
+
 mochi:
 	@(cd deps/mochiweb;$(MAKE))
-
+thrift:
+	@(cd deps/thrift;$(MAKE))
+	
 compile:
 	@$(ERL) -pa $(EBIN_DIRS) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'
 

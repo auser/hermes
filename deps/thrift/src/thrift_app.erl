@@ -1,4 +1,15 @@
--module (ambassador_app).
+%%%-------------------------------------------------------------------
+%%% File:      thrift_app.erl
+%%% @author    Cliff Moon <> []
+%%% @copyright 2009 Cliff Moon
+%%% @doc  
+%%%
+%%% @end  
+%%%
+%%% @since 2009-04-04 by Cliff Moon
+%%%-------------------------------------------------------------------
+-module(thrift_app).
+-author('').
 
 -behaviour(application).
 
@@ -19,8 +30,8 @@
 %% top supervisor of the tree.
 %% @end 
 %%--------------------------------------------------------------------
-start(_Type, _Args) ->
-  case ambassador_sup:start_link() of
+start(_Type, StartArgs) ->
+  case thrift_sup:start_link() of
     {ok, Pid} -> 
       {ok, Pid};
     Error ->
@@ -40,4 +51,5 @@ stop(_State) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+
 

@@ -1,10 +1,24 @@
--module (ambassador_sup).
+%%%-------------------------------------------------------------------
+%%% File:      thrift_sup.erl
+%%% @author    Cliff Moon <> []
+%%% @copyright 2009 Cliff Moon
+%%% @doc  
+%%%
+%%% @end  
+%%%
+%%% @since 2009-04-04 by Cliff Moon
+%%%-------------------------------------------------------------------
+-module(thrift_sup).
+-author('').
 
+-behaviour(supervisor).
+
+%% API
 -export([start_link/0]).
 
--behavior(supervisor).
-
+%% Supervisor callbacks
 -export([init/1]).
+
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -32,9 +46,7 @@ start_link() ->
 %% @end 
 %%--------------------------------------------------------------------
 init([]) ->
-  {ok,
-    {{one_for_one, 5, 10 }, [ { ambassador, { ambassador, start_link, [] }, permanent, 3000, worker, [ ambassador ] }]}
-  }.
+  {ok,{{one_for_all,0,1}, []}}.
 
 %%====================================================================
 %% Internal functions

@@ -3,40 +3,63 @@
 %%% Author  : Ari Lerner
 %%% Description : 
 %%%
-%%% Created :  Thu Aug  6 20:15:44 PDT 2009
+%%% Created :  Mon Aug 10 11:57:05 PDT 2009
 %%%-------------------------------------------------------------------
 
 -module (ambassador).
 -behaviour(gen_server).
 
 %% API
--export([start_link/1]).
+-export([start_link/0]).
+-export ([
+          ask_thrift/1,
+          handle_function/2,
+          get/1
+          ]).
+-export ([stop/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--export ([echo/1]).
-
 -record(state, {
-          port, 
-          timeout
         }).
+
 -define(SERVER, ?MODULE).
 
 %%====================================================================
 %% API
 %%====================================================================
-echo(Msg) -> 
-  do(echo, Msg).
+ask_thrift(Msg) ->
+  Pid = get_thrift_pid(),
+  thrift_client:call(Pid, get, [Msg]).
 
-  
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link(Cmd) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, Cmd, []).
+start_link() ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+stop() ->
+  thrift_socket_server:stop(get_hostname()),
+  ok.
+
+
+%%%%% THRIFT INTERFACE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
+    % ?infoFmt("handling thrift stuff in PID ~p~n", [self()]),
+    case apply(?MODULE, Function, tuple_to_list(Args)) of
+        ok -> {ok, "handled"};
+        Reply -> {reply, Reply}
+    end.
+
+get(Key) ->
+  io:format("Get ~p in ~p~n", [Key, ?MODULE]),
+  {ok, <<"Nice">>}.
+  
+
 
 %%====================================================================
 %% gen_server callbacks
@@ -49,26 +72,28 @@ start_link(Cmd) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init(IssuedCmd) ->
-  Cmd = case IssuedCmd of
-    [] ->
-      case application:get_env(ambassador_app, cmd) of
-        {ok, Q} -> Q;
-        undefined -> "echo -"
-      end;
-    Else -> Else
+init([]) ->
+  ThriftPort = case config:get(thrift_port) of
+    {error, _} -> 11223;
+    {ok, V} -> V
   end,
-  io:format("----------------------- Command: ~p or ~p~n", [Cmd, IssuedCmd]),
-  Timeout = case application:get_env(ambassador_app, timeout) of
-    { ok, T } -> T;
-    undefined -> 3000
-  end,
-  process_flag(trap_exit, true),
-  Port = erlang:open_port(
-    {spawn, Cmd},
-    [ {line, 10000}, eof, exit_status, stream ] 
-  ),
-  {ok, #state{port = Port, timeout = Timeout}}.
+  thrift_socket_server:start([
+    {port, ThriftPort},
+    {name, ambassador},
+    {service, ambassador_thrift},
+    {handler, ?MODULE},
+    {socket_opts, [{recv_timeout, infinity}]}]),
+    
+  {ok, HostName} = get_hostname(),
+  loudmouth:banner([
+    "Started thrift",
+    {"thrift_port", erlang:integer_to_list(ThriftPort)},
+    {"thrift client hostname", HostName}
+  ]),
+  
+  thrift_client:start_link("localhost", ThriftPort, ambassador_thrift),
+  
+  {ok, #state{}}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -78,21 +103,13 @@ init(IssuedCmd) ->
 %%                                      {stop, Reason, Reply, State} |
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
-%%--------------------------------------------------------------------
-handle_call({do, Action, Args }, _From, #state{port = Port, timeout = Timeout } = State) ->
-    Line = [ erlang:atom_to_list(Action), " ", Args , "\n"],
-    port_command(Port, Line),
-    case collect_response(Port, Timeout) of
-          {response, Response} -> 
-              {reply, { ok, Response }, State};
-          { error, timeout } ->
-              {stop, port_timeout, State};
-          { error, Error } -> 
-              {reply, { error, Error  }, State}
-    end;
+%%-------------------------------------------------------------------- 
+handle_call({call, Function, Args}, _From, State) ->
+  Out = handle_function(Function, Args),
+  {reply, Out, State};
   
 handle_call(_Request, _From, State) ->
-  Reply = ok,
+  Reply = {ok, "Handled"},
   {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
@@ -134,48 +151,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-do(Command, Args) -> 
-  case has_newline(Args) of
-    true  -> { error, "No newlines" };
-    false -> gen_server:call (?MODULE, { do, Command, Args } ) 
-  end.
+%%--------------------------------------------------------------------
+%% Function: get_hostname () -> HostName
+%% Description: Quick accessor to local node's hostname
+%% TODO: Make a commandline-passable-option
+%%--------------------------------------------------------------------
+get_hostname() -> inet:gethostname().
 
-
-collect_response(Port, Timeout ) ->
-    collect_response(Port, [], [], Timeout ).
-
-collect_response( Port, RespAcc, LineAcc, Timeout) ->
-    receive
-        {Port, {data, {eol, "OK"}}} ->
-            {response, lists:reverse(RespAcc)};
-
-        {Port, {data, {eol, Result}}} ->
-            Line = lists:reverse([Result | LineAcc]),
-            collect_response(Port, [Line | RespAcc], [], Timeout);
-
-        {Port, {data, {noeol, Result}}} ->
-            collect_response(Port, RespAcc, [Result | LineAcc], Timeout)
-
-    after Timeout -> 
-      timeout
-    end.
-
-
-has_newline([]) -> false;
-has_newline(<<>>) -> false;
-has_newline([ H |  T]) 
-  when is_list(H); is_binary(H) ->
-    case has_newline(H) of
-      true -> true;
-      false -> has_newline(T)
-    end;
-has_newline([ H | T]) when is_integer(H) ->
-  if 
-    H =:= $\n -> true;
-    true -> has_newline(T)
-  end;
-has_newline(<<H:8,T/binary>>) ->
-  if 
-    H =:= $\n -> true;
-    true -> has_newline(T)
-  end.
+%%--------------------------------------------------------------------
+%% Function: get_thrift_pid () -> {ok, Pid}
+%% Description: Get the thrift_client pid
+%%--------------------------------------------------------------------
+get_thrift_pid() -> erlang:whereis(ambassador).

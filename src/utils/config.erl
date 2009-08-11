@@ -24,6 +24,7 @@ read_1(Location) ->
 %%                                {ok, Value}
 %% Description: Get the value of a config element
 %%--------------------------------------------------------------------
+get(Key) -> get(Key, read()).
 get(_Key, []) ->
   {error, not_found};
 get(Key, [{Key, Value} | _Config]) ->

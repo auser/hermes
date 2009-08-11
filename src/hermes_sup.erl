@@ -15,12 +15,12 @@ init([Type, Args]) ->
   RrdServerSup    = { erlrrd_sup,     {erlrrd_sup, start_link, []}, permanent, 2000, worker, []},  
   MonServerSup    = { mon_server_sup, {mon_server_sup, start_link, [Args]}, permanent, 2000, worker, []},  
   RestServerSup   = { rest_server,    {rest_app, start, [Type, Args]}, permanent,2000,worker,[]},
-  % AmbassadorApp   = { ambassador_app, {ambassador_app, start, []}, permanent, 2000, worker, []},
+  AmbassadorApp   = { ambassador_app, {ambassador_app, start, [Type, Args]}, permanent, 2000, worker, []},  
   
   {ok,{_SupFlags = {one_for_one, ?MAXIMUM_RESTARTS, ?MAX_DELAY_TIME},[
     RestServerSup,
     RrdServerSup,
     MonServerSup,
-    % AmbassadorApp,
+    AmbassadorApp,
     HermesLoggerSup
   ]}}.
