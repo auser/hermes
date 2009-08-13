@@ -1,6 +1,6 @@
 -module(erlrrd_sup).
 
--export([start_link/1, start_link/0]).
+-export([start_link/1, start_link/0, stop/0]).
 
 -behavior(supervisor).
 
@@ -40,3 +40,7 @@ init(_) ->
       ]
     }
   }.
+
+stop() ->
+  supervisor:stop([]),
+  ok.

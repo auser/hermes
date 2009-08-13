@@ -52,3 +52,14 @@ jsonify(Body) ->
     })
   ].
 
+
+%%====================================================================
+%% LISTS
+%%====================================================================
+list_delete(Key, Config) ->
+	[ T || T <- Config, element(1, T) =/= Key].
+ 
+list_append(Config, Other) ->
+	DFun = fun(Key, Value, Array) -> lists:append(delete(Key, Array), [{Key, Value}]) end,
+	[NewConfig] = [ DFun(Key, Value, Config) || {Key, Value} <- Other ],
+	NewConfig.

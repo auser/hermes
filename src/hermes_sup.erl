@@ -2,8 +2,9 @@
 -include ("hermes.hrl").
 -behaviour(supervisor).
 
--export([start/2]).
--export([init/1]).
+-export([ start/2,
+          init/1,
+          stop/1]).
 
 start(Type, Args) ->  
   supervisor:start_link(?MODULE, [Type, Args]).
@@ -24,3 +25,13 @@ init([Type, Args]) ->
     AmbassadorApp,
     HermesLoggerSup
   ]}}.
+  
+stop(Args) ->
+  io:format("Stopping hermes~n"),
+  lists:map(fun(Term) -> Term:stop(Args) end, [
+                                            % hermes_logger, 
+                                            erlrrd_app, 
+                                            mon_server_sup, 
+                                            rest_app,
+                                            ambassador_app
+                                          ]).

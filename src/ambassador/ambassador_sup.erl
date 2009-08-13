@@ -1,6 +1,6 @@
 -module (ambassador_sup).
 
--export([start_link/0]).
+-export([start_link/0, stop/1]).
 
 -behavior(supervisor).
 
@@ -39,3 +39,8 @@ init([]) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+stop(Args) ->
+  io:format("Stopping ambassador~n"),
+  ambassador:stop(Args),
+  supervisor:terminate_child(?MODULE, ambassador),
+  ok.

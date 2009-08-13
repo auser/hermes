@@ -34,7 +34,8 @@ start(_Type, _Args) ->
 %% should do any necessary cleaning up. The return value is ignored. 
 %% @end 
 %%--------------------------------------------------------------------
-stop(_State) ->
+stop(State) ->
+  ambassador_sup:stop(State),
   ok.
 
 %%====================================================================

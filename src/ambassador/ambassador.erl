@@ -17,7 +17,7 @@
           handle_function/2,
           get/1
           ]).
--export ([stop/0]).
+-export ([stop/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -44,7 +44,7 @@ ask(Fun, Args) ->
 start_link() ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-stop() ->
+stop(_Args) ->
   ?PROTO:stop(),
   ok.
 
@@ -83,7 +83,18 @@ init([]) ->
     {error, _} -> 11223;
     {ok, V} -> V
   end,
-  ?PROTO:start([{proto_port, Port}, {module, ?MODULE}]),
+  Config = config:read(),
+  MergeArgs = lists:map(fun(Tuple) ->
+      case lists:member(Tuple, Config) of
+        true -> 
+          {K,_} = Tuple,
+          config:get(K, Config);
+        false ->
+          lists:append([Tuple], Config)
+      end
+    end, [{proto_port, Port}]),
+  ProtoArgs = utils:list_append(Config, MergeArgs),
+  ?PROTO:start_link(ProtoArgs),
   {ok, #state{}}.
 
 %%--------------------------------------------------------------------

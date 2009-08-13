@@ -7,7 +7,7 @@
           stop/0
          ]).
 
-start(Args) ->
+start(_) ->
   ok.
   
 stop() ->
@@ -21,6 +21,6 @@ call(Pid, Func, Msg) ->
 %% Description: Quick accessor to local node's hostname
 %% TODO: Make a commandline-passable-option
 %%--------------------------------------------------------------------
-get_hostname() -> inet:gethostname().
+% get_hostname() -> inet:gethostname().
 
 get_pid() -> erlang:whereis(ambassador).

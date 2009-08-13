@@ -5,5 +5,5 @@
 %%
 
 
--include("hermes_types.hrl").
+-include("poolparty_types.hrl").
 

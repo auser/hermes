@@ -11,7 +11,7 @@
 -include ("hermes.hrl").
 
 %% API
--export([start_link/0, stop/0, append/1, print/0, 
+-export([start_link/0, stop/1, append/1, print/0, 
           error/1,error/2,
           info/1,info/2
         ]).
@@ -35,8 +35,9 @@
 start_link() ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-stop() ->
-  gen_server:call(?MODULE, stop).
+stop(_Args) ->
+  gen_server:call(?MODULE, stop),
+  ok.
 
 error(Msg) -> error(Msg, []).
 error(Msg, Args) -> error_logger:error_msg(lists:flatten(io_lib:format(Msg, Args))).
