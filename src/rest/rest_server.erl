@@ -11,7 +11,7 @@
 -include ("hermes.hrl").
 
 %% API
--export([start_link/1]).
+-export([start_link/1, stop/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -34,6 +34,13 @@
 start_link(Args) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
 
+
+stop(_Args) ->
+  io:format("Stopping ~p~n", [?MODULE]),
+  gen_server:call(?MODULE, stop),
+  stop_mochiweb(),
+  ok.
+  
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -135,6 +142,11 @@ start_mochiweb(Args) ->
   mochiweb_http:start([ {port, Port},
                         {loop, fun dispatch_requests/1}]).
 
+
+stop_mochiweb() ->
+  mochiweb_http:stop(),
+  ok.
+  
 dispatch_requests(Req) ->
   Path = Req:get(path),
   Action = clean_path(Path),

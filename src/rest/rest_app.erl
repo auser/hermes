@@ -6,4 +6,6 @@
 start(_Type, Args) ->
   rest_server_sup:start_link(Args).
 
-stop(_State) -> ok.
+stop(State) -> 
+  rest_server:stop(State),
+  ok.
