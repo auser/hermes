@@ -13,7 +13,7 @@
 %% API
 -export([start_link/0]).
 -export ([
-          ask/2,
+          ask/3,
           handle_function/2,
           get/1
           ]).
@@ -33,9 +33,8 @@
 %%====================================================================
 %% API
 %%====================================================================
-ask(Fun, Args) ->
-  Pid = get_proto_pid(),
-  ?PROTO:call(Pid, Fun, [Args]).
+ask(CloudName, Fun, Args) ->
+  ?PROTO:ask(CloudName, Fun, [Args]).
 
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
@@ -154,8 +153,3 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-%%--------------------------------------------------------------------
-%% Function: get_proto_pid () -> {ok, Pid}
-%% Description: Get the proto_client pid
-%%--------------------------------------------------------------------
-get_proto_pid() -> ?PROTO:get_pid().

@@ -18,8 +18,7 @@
 -export([start_link/1]).
 
 -export ([
-          get_pid/0,
-          call/3,
+          ask/3,
           stop/0
          ]).
 
@@ -29,7 +28,8 @@
          terminate/2, code_change/3]).
 
 -record(state, {
-          start_args  % args to start with
+          start_args,   % args to start with
+          thrift_pid    % thrift client pid
        }).
                  
 -define(SERVER, ?MODULE).
@@ -44,8 +44,8 @@
 start_link(Args) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
 
-call(Pid, Func, Msg) ->
-  thrift_client:call(Pid, Func, Msg).
+ask(CloudName, Func, Msg) ->
+  gen_server:call(?MODULE, {cloud_query, CloudName, Func, Msg}).
 
 %%--------------------------------------------------------------------
 %% Function: stop () -> ok
@@ -87,9 +87,10 @@ init([Args]) ->
   loudmouth:banner("Started thrift", BannerArr),
 
   % O = thrift_client:start_link(HostName, ThriftPort, commandInterface_thrift),
-  
+  {ok, P} = thrift_client:start_link(HostName, ThriftPort, commandInterface_thrift),
   {ok, #state{
-    start_args = Args
+    start_args = Args,
+    thrift_pid = P
   }}.
 
 %%--------------------------------------------------------------------
@@ -101,6 +102,10 @@ init([Args]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({cloud_query, CloudName, Fun, Args}, _From, #state{thrift_pid = P} = State) ->
+  Reply = cloud_query(P, CloudName, Fun, Args),
+  {reply, Reply, State};
+  
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
@@ -166,8 +171,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 get_hostname() -> inet:gethostname().
 
-get_pid() -> erlang:whereis(ambassador).
-
 
 %%====================================================================
 % Start thrift server (in erlang) 
@@ -183,18 +186,31 @@ start_thrift_server(Args) ->
     {handler, Module},
     {socket_opts, [{recv_timeout, infinity}]}]),
   ok.
-  
+
 start_thrift_client(Args) ->  
   StartCmd = build_start_command("run", Args),
   ?INFO("Starting ~p: ~p~n", [?MODULE, StartCmd]),
   spawn_link(fun() -> os:cmd(StartCmd) end).
   
+stop_thrift_client(Args) ->
+  StopCmd = build_start_command("stop", Args),
+  ?INFO("Stopping ~p: ~p~n", [?MODULE, StopCmd]),
+  spawn_link(fun() -> os:cmd(StopCmd) end).
+
+%%--------------------------------------------------------------------
+%% Function: build_start_command (Action, Args) -> cloud thrift string
+%% Description: build a start command
+%%--------------------------------------------------------------------  
 build_start_command(Action, Args) ->
   ThriftPort = proplists:get_value(proto_port, Args),
   PortArg = lists:append(["--port ", erlang:integer_to_list(ThriftPort)]),
   lists:append(["cloud thrift ", Action, " -- ", PortArg]).
 
-stop_thrift_client(Args) ->
-  StopCmd = build_start_command("stop", Args),
-  ?INFO("Stopping ~p: ~p~n", [?MODULE, StopCmd]),
-  spawn_link(fun() -> os:cmd(StopCmd) end).
+%%====================================================================
+%% Query on the thrift server
+%%====================================================================
+
+cloud_query(P, Name, Meth, Args) ->
+  Query = #cloudQuery{name=Name},
+  io:format("Query: ~p~n", [Query]),
+  thrift_client:call(P, run_command, [Query, Meth, Args]).

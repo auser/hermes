@@ -7,6 +7,7 @@
 %%%-------------------------------------------------------------------
 
 -module (nag).
+-include ("hermes.hrl").
 -behaviour(gen_server).
 
 %% API
@@ -17,8 +18,9 @@
          terminate/2, code_change/3]).
 
 -record(state, {
-        timer
+          sleep_delay      % delay between lags
         }).
+
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -43,7 +45,14 @@ start_link() ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-  {ok, #state{}}.
+  SleepDelay = case application:get_env(hermes, nag_delay) of
+    { ok, D } ->  D;
+    undefined -> ?DEFAULT_NAG_DELAY
+  end,
+  start_nag_timer(SleepDelay),
+  {ok, #state{
+    sleep_delay = SleepDelay
+  }}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -73,6 +82,17 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
+handle_info({nag}, #state{sleep_delay = SleepDelay} = State) ->
+  Monitors = mon_server:list_monitors(),
+  % ?INFO("Time to nag: ~p~n", [Monitors]),
+  lists:map(fun(Mon) ->
+    Avg = mon_server:get_average(Mon),
+    
+    Avg
+    end, Monitors),
+  start_nag_timer(SleepDelay),
+  {noreply, State};
+  
 handle_info(_Info, State) ->
   {noreply, State}.
 
@@ -96,3 +116,5 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+start_nag_timer(SleepDelay) -> timer:send_after(SleepDelay, {nag}).

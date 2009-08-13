@@ -149,7 +149,7 @@ handle_get_average(Module, Last) ->
         " --start ", erlang:integer_to_list(StartTime),
         " --end ", erlang:integer_to_list(StartTime + Last)
       ]),
-
+      
       {ok, Fetched} = erlrrd:fetch(M),
       parse_rrd_return(Fetched)
   end.

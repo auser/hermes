@@ -110,11 +110,15 @@ create_fixture_rrds() ->
   Fixtures = [cpu, memory, disk],
   {Mega, Secs, _} = now(),
   StartTime = Mega*1000000 + Secs,
-  Ras = lists:append([" --start ", erlang:integer_to_list(StartTime), 
-                      " DS:cpu:GAUGE:600:0:1250000 RRA:AVERAGE:0.5:1:24 RRA:LAST:0.5:6:10"]),
+  
   % Create the rrds
   lists:map(
     fun(Module) ->
+      Ras = lists:append([" --start ", erlang:integer_to_list(StartTime), 
+                          " DS:", erlang:atom_to_list(Module), ":GAUGE:600:0:1250000 RRA:AVERAGE:0.5:1:24 RRA:LAST:0.5:6:10"
+                          %" DS:cpu:GAUGE:600:0:1250000 RRA:AVERAGE:0.5:1:24 RRA:LAST:0.5:6:10"]),
+                          ]),
+                          
       Meth = lists:append([?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", Ras]),
       erlrrd:create(Meth)
     end, Fixtures),
