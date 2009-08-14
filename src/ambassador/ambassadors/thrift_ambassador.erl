@@ -70,6 +70,8 @@ stop() ->
 init([Args]) ->
   ThriftPort = proplists:get_value(proto_port, Args),
   stop_thrift_client(Args),
+  timer:sleep(500),
+  ?INFO("STARTING THRIFT CLIENT~n", []),
   case start_thrift_client(Args) of
     {error, Reason} ->
       io:format("Assuming the thrift_client is already started error: ~p~n", [Reason]),
@@ -78,7 +80,7 @@ init([Args]) ->
       erlang:monitor(process, Pid),
       Pid
   end,
-    
+  
   {ok, HostName} = get_hostname(),
   BannerArr = [
     {"thrift_port", erlang:integer_to_list(ThriftPort)},
@@ -87,7 +89,14 @@ init([Args]) ->
   loudmouth:banner("Started thrift", BannerArr),
 
   % O = thrift_client:start_link(HostName, ThriftPort, commandInterface_thrift),
-  {ok, P} = thrift_client:start_link(HostName, ThriftPort, commandInterface_thrift),
+  timer:sleep(1000),
+  P = case thrift_client:start_link(HostName, ThriftPort, commandInterface_thrift) of
+    {error, R} ->
+      ?ERROR("Thrift client could not connect to: ~p, ~p, ~p = ~p~n", [HostName, ThriftPort, commandInterface_thrift, R]),
+      timer:sleep(1000),
+      self();
+    {ok, C} -> C
+  end,
   {ok, #state{
     start_args = Args,
     thrift_pid = P
@@ -188,7 +197,7 @@ start_thrift_server(Args) ->
   ok.
 
 start_thrift_client(Args) ->  
-  StartCmd = build_start_command("run", Args),
+  StartCmd = build_start_command("start", Args),
   ?INFO("Starting ~p: ~p~n", [?MODULE, StartCmd]),
   spawn_link(fun() -> os:cmd(StartCmd) end).
   
@@ -212,5 +221,5 @@ build_start_command(Action, Args) ->
 
 cloud_query(P, Name, Meth, Args) ->
   Query = #cloudQuery{name=Name},
-  io:format("Query: ~p~n", [Query]),
+  io:format("Query: ~p~n", [[Query, Meth, Args]]),
   thrift_client:call(P, run_command, [Query, Meth, Args]).

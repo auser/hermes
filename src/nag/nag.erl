@@ -85,9 +85,10 @@ handle_cast(_Msg, State) ->
 handle_info({nag}, #state{sleep_delay = SleepDelay} = State) ->
   Monitors = mon_server:list_monitors(),
   % ?INFO("Time to nag: ~p~n", [Monitors]),
-  lists:map(fun(Mon) ->
+  lists:each(fun(Mon) ->
     Avg = mon_server:get_average(Mon),
-    
+    % ?INFO("Average: ~p for ~p~n", [Avg, Mon]),
+    % {disk,[{"1250201400",0.0}]}
     Avg
     end, Monitors),
   start_nag_timer(SleepDelay),

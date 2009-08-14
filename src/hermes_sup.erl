@@ -32,6 +32,7 @@ stop(Args) ->
   io:format("Stopping hermes~n"),
   lists:map(fun(Term) -> Term:stop(Args) end, [
                                             % hermes_logger, 
+                                            nag_app,
                                             erlrrd_app, 
                                             mon_server_sup, 
                                             rest_app,

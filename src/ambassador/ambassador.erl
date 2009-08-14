@@ -13,7 +13,7 @@
 %% API
 -export([start_link/0]).
 -export ([
-          ask/3,
+          ask/2, ask/3,
           handle_function/2,
           get/1
           ]).
@@ -33,8 +33,8 @@
 %%====================================================================
 %% API
 %%====================================================================
-ask(CloudName, Fun, Args) ->
-  ?PROTO:ask(CloudName, Fun, [Args]).
+ask(CloudName, Fun) -> ?PROTO:ask(CloudName, Fun, "").
+ask(CloudName, Fun, Args) -> ?PROTO:ask(CloudName, Fun, [Args]).
 
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
