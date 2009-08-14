@@ -4,7 +4,7 @@
 -define (MAXIMUM_RESTARTS, 10).
 -define (MAX_DELAY_TIME, 60).
 
--define (DEFAULT_NAG_DELAY, 3000).
+-define (DEFAULT_NAG_DELAY, 10000).
 
 -define (FMT_MSG (Msg, Args), lists:flatten([?MODULE, ?LINE, io_lib:format(Msg, Args)])).
 -define (INFO (Msg, Args),    hermes_logger:info(Msg, Args)).

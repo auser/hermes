@@ -4,7 +4,9 @@
         {modules, [hermes]},
         {env, [
           {port, 8642},
-          {monitors, [cpu, memory]}
+          {monitors, [cpu, memory]},
+          {clouds_config, "/etc/poolparty/clouds.rb"},
+          {cloud_name, "app"}
         ]},
         {registered, [hermes]},
         {applications, [kernel, stdlib]},

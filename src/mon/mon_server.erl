@@ -168,7 +168,7 @@ parse_rrd_return_1([[Desc]|Rest]) ->
   Module = erlang:list_to_atom(string:strip(Desc)),
   [_|ArrOfValues] = Rest,
   Values = lists:map(fun([Line]) -> collect_rrd_values(Line) end, ArrOfValues),
-  {Module, Values}.
+  {Module, lists:reverse(Values)}.
  
 collect_rrd_values([]) -> {};
 collect_rrd_values(Str) ->

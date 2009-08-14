@@ -69,10 +69,13 @@ stop() ->
 %%--------------------------------------------------------------------
 init([Args]) ->
   ThriftPort = proplists:get_value(proto_port, Args),
+  CloudConfig = proplists:get_value(clouds_config, Args),
+  CloudName = proplists:get_value(cloud_name, Args),
+  
   stop_thrift_client(Args),
   timer:sleep(500),
-  ?INFO("STARTING THRIFT CLIENT~n", []),
-  case start_thrift_client(Args) of
+  
+  case start_thrift_cloud_server(Args) of
     {error, Reason} ->
       io:format("Assuming the thrift_client is already started error: ~p~n", [Reason]),
       ok;
@@ -84,7 +87,9 @@ init([Args]) ->
   {ok, HostName} = get_hostname(),
   BannerArr = [
     {"thrift_port", erlang:integer_to_list(ThriftPort)},
-    {"thrift client hostname", HostName}
+    {"thrift client hostname", HostName},
+    {"cloud name", CloudName},
+    {"cloud config", CloudConfig}
   ],
   loudmouth:banner("Started thrift", BannerArr),
 
@@ -111,8 +116,12 @@ init([Args]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({cloud_query, CloudName, Fun, Args}, _From, #state{thrift_pid = P} = State) ->
-  Reply = cloud_query(P, CloudName, Fun, Args),
+handle_call({cloud_query, CloudName, Fun, [Args]}, _From, #state{thrift_pid = P} = State) ->
+  Reply = case cloud_query(P, CloudName, Fun, Args) of
+    {ok, {cloudResponse, _BinCloudName, _BinFun, [<<"unhandled monitor">>]}} -> {error, unhandled_monitor};
+    {ok, {cloudResponse, _BinCloudName, _BinFun, BinResponse}} -> {ok, utils:turn_to_list(BinResponse)};
+    Else -> {error, Else}
+  end,
   {reply, Reply, State};
   
 handle_call(_Request, _From, State) ->
@@ -136,7 +145,7 @@ handle_cast(_Msg, State) ->
 %%--------------------------------------------------------------------
 handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = Args} = State) -> 
   erlang:demonitor(Ref),
-  case start_thrift_client(Args) of
+  case start_thrift_cloud_server(Args) of
     {error, Reason} ->
       io:format("Assuming the thrift_client is already started error: ~p~n", [Reason]),
       ok;
@@ -196,7 +205,7 @@ start_thrift_server(Args) ->
     {socket_opts, [{recv_timeout, infinity}]}]),
   ok.
 
-start_thrift_client(Args) ->  
+start_thrift_cloud_server(Args) ->  
   StartCmd = build_start_command("start", Args),
   ?INFO("Starting ~p: ~p~n", [?MODULE, StartCmd]),
   spawn_link(fun() -> os:cmd(StartCmd) end).
@@ -212,8 +221,11 @@ stop_thrift_client(Args) ->
 %%--------------------------------------------------------------------  
 build_start_command(Action, Args) ->
   ThriftPort = proplists:get_value(proto_port, Args),
-  PortArg = lists:append(["--port ", erlang:integer_to_list(ThriftPort)]),
-  lists:append(["cloud thrift ", Action, " -- ", PortArg]).
+  CloudConfig = proplists:get_value(clouds_config, Args),
+  ExtraArgs = lists:append([[" --port ", erlang:integer_to_list(ThriftPort), " -c ", CloudConfig]]),
+  
+  StartCommand = lists:flatten(lists:append([["cloud thrift ", Action, " "], ExtraArgs])),
+  StartCommand.
 
 %%====================================================================
 %% Query on the thrift server
@@ -221,5 +233,4 @@ build_start_command(Action, Args) ->
 
 cloud_query(P, Name, Meth, Args) ->
   Query = #cloudQuery{name=Name},
-  io:format("Query: ~p~n", [[Query, Meth, Args]]),
   thrift_client:call(P, run_command, [Query, Meth, Args]).

@@ -13,7 +13,7 @@
 %% API
 -export([start_link/0]).
 -export ([
-          ask/2, ask/3,
+          ask/1, ask/2,
           handle_function/2,
           get/1
           ]).
@@ -26,6 +26,8 @@
 
 -define (PROTO, thrift_ambassador).
 -record(state, {
+          start_args,
+          cloud_name
         }).
 
 -define(SERVER, ?MODULE).
@@ -33,8 +35,8 @@
 %%====================================================================
 %% API
 %%====================================================================
-ask(CloudName, Fun) -> ?PROTO:ask(CloudName, Fun, "").
-ask(CloudName, Fun, Args) -> ?PROTO:ask(CloudName, Fun, [Args]).
+ask(Fun)        -> gen_server:call(?MODULE, {ask, Fun}).
+ask(Fun, Args)  -> gen_server:call(?MODULE, {ask, Fun, Args}).
 
 %%--------------------------------------------------------------------
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
@@ -82,19 +84,33 @@ init([]) ->
     {error, _} -> 11223;
     {ok, V} -> V
   end,
-  Config = config:read(),
-  MergeArgs = lists:map(fun(Tuple) ->
-      case lists:member(Tuple, Config) of
-        true -> 
-          {K,_} = Tuple,
-          config:get(K, Config);
-        false ->
-          lists:append([Tuple], Config)
-      end
-    end, [{proto_port, Port}]),
-  ProtoArgs = utils:list_append(Config, MergeArgs),
+  
+  ?INFO("---------------------------~napplication:get_env(~p, ~p) = ~p~n---------------------------~n", 
+              [hermes, clouds_config, application:get_env(hermes, clouds_config)]),
+  CloudConfig = case application:get_env(hermes, clouds_config) of
+    undefined -> case config:get(clouds_config) of
+      {error, _}  -> "no_clouds_config";
+      {ok, VC}     -> VC
+    end;
+    {ok, CC} -> CC
+  end,
+  
+  CloudName = case application:get_env(hermes, cloud_name) of
+    undefined -> case config:get(cloud_name) of
+      {error, _}  -> "no_cloud_name";
+      {ok, VN}     -> VN
+    end;
+    {ok, CName} -> CName
+  end,
+  
+  ProtoArgs = [{proto_port, Port}, {clouds_config, CloudConfig}, {cloud_name, CloudName}],
+  
+  ?INFO("STARTING ~p with ~p~n", [?MODULE, ProtoArgs]),
   ?PROTO:start_link(ProtoArgs),
-  {ok, #state{}}.
+  {ok, #state{
+    start_args = ProtoArgs,
+    cloud_name = CloudName
+  }}.
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -105,6 +121,14 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%-------------------------------------------------------------------- 
+handle_call({ask, Function}, _From, #state{cloud_name = CloudName} = State) ->
+  Out = ?PROTO:ask(CloudName, Function, ""),
+  {reply, Out, State};
+  
+handle_call({ask, Function, Args}, _From, #state{cloud_name = CloudName} = State) ->
+  Out = ?PROTO:ask(CloudName, Function, [Args]),
+  {reply, Out, State};
+      
 handle_call({call, Function, Args}, _From, State) ->
   ?INFO("Calling ~p(~p)~n", [Function, Args]),
   Out = handle_function(Function, Args),

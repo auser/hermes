@@ -82,14 +82,27 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({nag}, #state{sleep_delay = SleepDelay} = State) ->
+handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
   Monitors = mon_server:list_monitors(),
   % ?INFO("Time to nag: ~p~n", [Monitors]),
-  lists:each(fun(Mon) ->
-    Avg = mon_server:get_average(Mon),
+  lists:map(fun(Mon) ->
+    Avg = mon_server:get_average_over(Mon, Interval),
     % ?INFO("Average: ~p for ~p~n", [Avg, Mon]),
     % {disk,[{"1250201400",0.0}]}
-    Avg
+    {Mon, [LastTuple|_]} = Avg,
+    
+    {_Timestamp, Float} = LastTuple,    
+    Out = ambassador:ask("run_monitor", [
+                                          erlang:atom_to_list(Mon),
+                                          erlang:float_to_list(Float)
+                                        ]),
+    
+    case Out of
+      {ok, Resp} ->
+        ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
+        Resp;
+      {error, _} -> ok
+    end
     end, Monitors),
   start_nag_timer(SleepDelay),
   {noreply, State};
@@ -118,4 +131,4 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-start_nag_timer(SleepDelay) -> timer:send_after(SleepDelay, {nag}).
+start_nag_timer(SleepDelay) -> timer:send_after(SleepDelay, {nag, 600}).
