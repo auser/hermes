@@ -7,6 +7,7 @@ CFLAGS					= +debug_info -W0 -I include -pa $(EBIN) -I gen-erl/
 COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
 EBIN_DIRS				= $(wildcard deps/*/ebin)
 WEB_DIR					= web/
+TEST_DIR				= test/
 WONDERLAND_DIR	= $(WEB_DIR)/wonderland
 APP							= hermes
 
@@ -35,6 +36,10 @@ compile:
 edoc:
 	@echo Generating $(APP) documentation from srcs
 	@$(ERL) -noinput -eval 'edoc:application($(APP), "./", [{doc, "doc/"}, {files, "src/"}])' -s erlang halt
+	
+test:
+	echo "MAKE TEST"
+	@(cd $(TEST_DIR) && make)
 	
 boot:
 	(cd ebin; erl -pa ebin -noshell -run make_boot write_scripts hermes)
