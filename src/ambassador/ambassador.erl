@@ -85,8 +85,6 @@ init([]) ->
     {ok, V} -> V
   end,
   
-  ?INFO("---------------------------~napplication:get_env(~p, ~p) = ~p~n---------------------------~n", 
-              [hermes, clouds_config, application:get_env(hermes, clouds_config)]),
   CloudConfig = case application:get_env(hermes, clouds_config) of
     undefined -> case config:get(clouds_config) of
       {error, _}  -> "no_clouds_config";
@@ -95,13 +93,22 @@ init([]) ->
     {ok, CC} -> CC
   end,
   
-  CloudName = case application:get_env(hermes, cloud_name) of
+  % cloud name COULD be a file
+  CNameArg = case application:get_env(hermes, cloud_name) of
     undefined -> case config:get(cloud_name) of
       {error, _}  -> "no_cloud_name";
       {ok, VN}     -> VN
     end;
     {ok, CName} -> CName
   end,
+  
+  CloudName = case file:read_file(CNameArg) of
+    {ok, Binary} ->
+      [Cname|_] = string:tokens(utils:turn_to_list(Binary), "\n"),
+      Cname;
+    {error, _} -> CNameArg
+  end,
+  
   
   ProtoArgs = [{proto_port, Port}, {clouds_config, CloudConfig}, {cloud_name, CloudName}],
   

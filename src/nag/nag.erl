@@ -88,7 +88,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
   lists:map(fun(Mon) ->
     Avg = mon_server:get_average_over(Mon, Interval),
     % ?INFO("Average: ~p for ~p~n", [Avg, Mon]),
-    % {disk,[{"1250201400",0.0}]}
+    % {disk,[{"1250201400",0.4}]}
     {Mon, [LastTuple|_]} = Avg,
     
     {_Timestamp, Float} = LastTuple,    
@@ -100,6 +100,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     case Out of
       {ok, Resp} ->
         ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
+        timer:sleep(1000),
         Resp;
       {error, _} -> ok
     end
