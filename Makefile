@@ -31,15 +31,14 @@ thrift:
 	@(mv gen-erl/hermes*.hrl include)
 	
 compile:
-	@$(ERL) -pa $(EBIN_DIRS) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'
+	@$(ERL) -pa $(EBIN_DIRS) -pa $(EBIN) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'
 
 edoc:
 	@echo Generating $(APP) documentation from srcs
 	@$(ERL) -noinput -eval 'edoc:application($(APP), "./", [{doc, "doc/"}, {files, "src/"}])' -s erlang halt
 	
-test:
-	echo "MAKE TEST"
-	@(cd $(TEST_DIR) && make)
+test: compile
+	$(ERL) -noshell -pa $(EBIN) -pa test/ebin -s test_suite test -s init stop
 	
 boot:
 	(cd ebin; erl -pa ebin -noshell -run make_boot write_scripts hermes)
@@ -51,7 +50,7 @@ ebin:
 	@mkdir ebin
 
 clean:
-	rm -rf ebin/*.beam ebin/erl_crash.dump erl_crash.dump ebin/*.boot ebin/*.rel ebin/*.script 
+	rm -rf ebin/*.beam ebin/erl_crash.dump erl_crash.dump ebin/*.boot ebin/*.rel ebin/*.script test/ebin/*.beam
 
 clean_mochiweb:
 	rm -rf deps/mochiweb/ebin/*.beam
