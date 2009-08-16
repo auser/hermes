@@ -4,5 +4,7 @@
 
 all_test_() ->
   [
-    {module, test_nag}
+    {module, hermes_logger_test},
+    {module, config_test},
+    {module, utils_test}
   ].

@@ -23,6 +23,7 @@ end).
 end).
 
 -define (LOG_MESSAGE (Message), hermes_logger:append({erlang:localtime(), ?MODULE, ?LINE, Message})).
+-define(TRACE(X, M),  io:format(user, "TRACE ~p:~p ~p ~p~n", [?MODULE, ?LINE, X, M])).
 -define (DEBUG_LOG (Bool, Message, Opts), 
   case Bool of true -> 
     io:format(Message, Opts); 

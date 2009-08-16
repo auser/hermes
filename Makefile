@@ -36,9 +36,12 @@ compile:
 edoc:
 	@echo Generating $(APP) documentation from srcs
 	@$(ERL) -noinput -eval 'edoc:application($(APP), "./", [{doc, "doc/"}, {files, "src/"}])' -s erlang halt
+
+eunit:
+	cd test/include/eunit && make
 	
 test: compile
-	$(ERL) -noshell -pa $(EBIN) -pa test/ebin -s test_suite test -s init stop
+	$(ERL) -noshell -pa $(EBIN) -pa test/ebin -pa test/include/gen_server_mock/ebin -s test_suite test -s init stop
 	
 boot:
 	(cd ebin; erl -pa ebin -noshell -run make_boot write_scripts hermes)

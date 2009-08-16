@@ -8,7 +8,11 @@
 %% Description: Get the location of an rrd file
 %%--------------------------------------------------------------------
 get_rrd_location(Module) ->
-  io_lib:fwrite("~p/~p.rrd", [?RRD_DIRECTORY, Module]).
+  get_rrd_location(Module, ?RRD_DIRECTORY).
+
+get_rrd_location(Module, Dir) ->
+  io_lib:fwrite("~s/~s.rrd", [Dir, Module]).
+
 
 % utils:delete(a, [{port, "90"}, {a, "danger"}]). => [{port,"90"}]
 % utils:delete(a, [{port, "90"}, {ab, "danger"}]). => [{port,"90"},{ab,"danger"}]
@@ -39,8 +43,8 @@ turn_to_list(Bin) when is_binary(Bin) -> erlang:binary_to_list(Bin);
 turn_to_list(Arg) -> erlang:atom_to_list(Arg).
 
 % Gross
-format_ip({A,B,C,D}) ->
-  integer_to_list(A) ++ "." ++ integer_to_list(B) ++ "." ++ integer_to_list(C) ++ "." ++ integer_to_list(D).
+format_ip({A,B,C,D}) -> integer_to_list(A) ++ "." ++ integer_to_list(B) ++ "." ++ integer_to_list(C) ++ "." ++ integer_to_list(D);
+format_ip([A,B,C,D]) -> integer_to_list(A) ++ "." ++ integer_to_list(B) ++ "." ++ integer_to_list(C) ++ "." ++ integer_to_list(D).
 
 jsonify(Body) when is_atom(Body) ->
   [ ?JSON_ENCODE({
