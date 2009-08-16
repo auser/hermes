@@ -10,7 +10,7 @@ setup() ->
 teardown(_S) ->
   hermes_logger:stop([]),
   ok.
-  
+
 test_info_msg_test_() ->
   {
     setup, 

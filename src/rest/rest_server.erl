@@ -60,7 +60,14 @@ init([Args]) ->
     undefined -> hermes;
     Else -> Else
   end,
-	StartArgs = lists:map(fun (Var) -> {ok, Value} = application:get_env(Module, Var), Value end, [port]),
+	StartArgs = lists:map(fun ({Var, Default}) -> 
+  	  case application:get_env(Module, Var) of
+        undefined -> Default;
+  	    V -> V
+      end
+	  end, [
+	        {port, 9999}
+	       ]),
 	
   start_mochiweb(StartArgs),
   {ok, #state{}}.
@@ -73,7 +80,15 @@ print_banner(Args) ->
   end,
   io:format("~s~n~s~n~n",
             [?SOFTWARE_NAME, ?COPYRIGHT_MESSAGE]),
-  [Port] = lists:map(fun (Var) -> {ok, Value} = application:get_env(Module, Var), Value end, [port]),
+  [Port] = lists:map(fun ({Var, Default}) -> 
+      	  case application:get_env(Module, Var) of
+            undefined -> Default;
+      	    V -> V
+          end
+        end, [
+              {port, 9999}
+             ]),
+             
   Settings =  [
                 {"node ", node()},
                 {"port ", erlang:integer_to_list(Port)}

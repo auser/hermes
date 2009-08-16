@@ -1,7 +1,7 @@
 -module (config_test).
 -include ("hermes.hrl").
 -include_lib("eunit/include/eunit.hrl").
-  
+
 test_info_msg_test_() ->
   Config = config:read(),
   [
