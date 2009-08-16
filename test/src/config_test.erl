@@ -7,5 +7,6 @@ test_info_msg_test_() ->
   [
     ?_assertEqual({port, 8642}, hd(Config)),
     ?_assertEqual({ok, 8642}, config:get(port)),
+    ?_assertEqual({error, not_found}, config:get(boxes)),
     ?_assertEqual({ok, 9999}, config:get(port, [{law, "and order"},{port, 9999}, {a, "apples"}]))
   ].
