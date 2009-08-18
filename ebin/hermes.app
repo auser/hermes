@@ -5,8 +5,8 @@
         {env, [
           {port, 8642},
           {monitors, [cpu, memory]},
-          {clouds_config, "/etc/poolparty/clouds.rb"},
-          {cloud_name, "app"}
+          {clouds_config, undefined},
+          {cloud_name, undefined}
         ]},
         {registered, [hermes]},
         {applications, [kernel, stdlib]},

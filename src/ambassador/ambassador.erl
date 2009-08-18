@@ -86,18 +86,18 @@ init([]) ->
   end,
   
   CloudConfig = case application:get_env(hermes, clouds_config) of
-    undefined -> case config:get(clouds_config) of
-      {error, _}  -> "no_clouds_config";
-      {ok, VC}     -> ensure_is_list(VC)
+    {ok, undefined} -> case config:get(clouds_config) of
+      {error, _}    -> ensure_is_list("no_clouds_config");
+      {ok, VC}      -> ensure_is_list(VC)
     end;
     {ok, CC} -> CC
   end,
   
   % cloud name COULD be a file
   CNameArg = case application:get_env(hermes, cloud_name) of
-    undefined -> case config:get(cloud_name) of
-      {error, _}  -> "no_cloud_name";
-      {ok, VN}     -> ensure_is_list(VN)
+    {ok, undefined} -> case config:get(cloud_name) of
+      {error, _}    -> ensure_is_list("no_cloud_name");
+      {ok, VN}      -> ensure_is_list(VN)
     end;
     {ok, CName} -> CName
   end,
@@ -108,7 +108,6 @@ init([]) ->
       ensure_is_list(Cnameout);
     {error, _} -> ensure_is_list(CNameArg)
   end,
-  
   
   ProtoArgs = [{proto_port, Port}, {clouds_config, CloudConfig}, {cloud_name, CloudName}],
   
