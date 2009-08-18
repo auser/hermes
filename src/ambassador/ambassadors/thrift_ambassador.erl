@@ -222,9 +222,15 @@ stop_thrift_client(Args) ->
 build_start_command(Action, Args) ->
   ThriftPort = proplists:get_value(proto_port, Args),
   CloudConfig = proplists:get_value(clouds_config, Args),
-  ExtraArgs = lists:append([[" --port ", erlang:integer_to_list(ThriftPort), " -c ", CloudConfig]]),
+  CloudName = proplists:get_value(cloud_name, Args),
   
-  StartCommand = lists:flatten(lists:append([["cloud thrift ", Action, " "], ExtraArgs])),
+  ExtraArgs = lists:append([
+                      [" --port ", erlang:integer_to_list(ThriftPort)], 
+                      [" -c ", CloudConfig], 
+                      [" -n ", CloudName]
+                    ]),
+  
+  StartCommand = lists:flatten(lists:append([["cloud thrift ", Action, " "], [ExtraArgs]])),
   StartCommand.
 
 %%====================================================================

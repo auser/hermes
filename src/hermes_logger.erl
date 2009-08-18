@@ -11,7 +11,7 @@
 -include ("hermes.hrl").
 
 %% API
--export([start_link/0, stop/1, append/1, print/0, 
+-export([start_link/1, stop/1, append/1, print/0, 
           error/1,error/2,
           info/1,info/2
         ]).
@@ -32,11 +32,11 @@
 %% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
 %% Description: Starts the server
 %%--------------------------------------------------------------------
-start_link() ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+start_link(Args) ->
+  gen_server:start_link({local, ?SERVER}, ?MODULE, Args, []).
 
 stop(_Args) ->
-  gen_server:call(?MODULE, stop),
+  gen_server:call(?SERVER, stop),
   ok.
 
 error(Msg) -> error(Msg, []).
@@ -46,10 +46,10 @@ info(Msg) -> info(Msg, []).
 info(Msg, Args) -> error_logger:info_msg(lists:flatten(io_lib:format(Msg, Args))).
 
 append(Log) ->
-  gen_server:call(?MODULE, {append, Log}).
+  gen_server:call(?SERVER, {append, Log}).
 
 print() ->
-  gen_server:call(?MODULE, {print}).
+  gen_server:call(?SERVER, {print}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -62,13 +62,18 @@ print() ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([]) ->
+init(Conf) ->
   LogPath = case application:get_env(hermes, log_path) of
     { ok, Log } ->  Log;
     undefined -> "logs/hermes.log"
   end,
   error_logger:logfile({open, LogPath}),
-  error_logger:tty(?TESTING),
+  
+  Tty = case proplists:get_value(tty, Conf) of
+    undefined -> ?TESTING;
+    V -> V
+  end,
+  error_logger:tty(Tty),
   {ok, #state{}}.
 
 %%--------------------------------------------------------------------

@@ -88,7 +88,7 @@ init([]) ->
   CloudConfig = case application:get_env(hermes, clouds_config) of
     undefined -> case config:get(clouds_config) of
       {error, _}  -> "no_clouds_config";
-      {ok, VC}     -> VC
+      {ok, VC}     -> ensure_is_list(VC)
     end;
     {ok, CC} -> CC
   end,
@@ -97,16 +97,16 @@ init([]) ->
   CNameArg = case application:get_env(hermes, cloud_name) of
     undefined -> case config:get(cloud_name) of
       {error, _}  -> "no_cloud_name";
-      {ok, VN}     -> VN
+      {ok, VN}     -> ensure_is_list(VN)
     end;
     {ok, CName} -> CName
   end,
   
   CloudName = case file:read_file(CNameArg) of
     {ok, Binary} ->
-      [Cname|_] = string:tokens(utils:turn_to_list(Binary), "\n"),
-      Cname;
-    {error, _} -> CNameArg
+      [Cnameout|_] = string:tokens(utils:turn_to_list(Binary), "\n"),
+      ensure_is_list(Cnameout);
+    {error, _} -> ensure_is_list(CNameArg)
   end,
   
   
@@ -184,3 +184,8 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
+ensure_is_list(Arg) ->
+  case Arg of
+    O when is_atom(O) -> erlang:atom_to_list(O);
+    O -> O
+  end.

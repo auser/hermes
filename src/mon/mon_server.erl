@@ -11,7 +11,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1]).
+-export([start_link/1, stop/0]).
 -export ([list_monitors/0]).
 -export ([get_average/1, get_average_over/2]).
 
@@ -31,6 +31,9 @@
 %%--------------------------------------------------------------------
 start_link(Args) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
+
+stop() ->
+  gen_server:call(?SERVER, stop).
 
 %%--------------------------------------------------------------------
 %% Function: get_average (Module) -> {ok, Fetched}
@@ -84,7 +87,10 @@ handle_call({get_average, Module, Seconds}, _From, State) ->
 handle_call({get_average, Module}, _From, State) ->
   Fetched = handle_get_average(Module, 60),
   {reply, Fetched, State};
-  
+
+handle_call(stop, _From, State) ->
+  {stop, normal, stopped, State};
+
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.

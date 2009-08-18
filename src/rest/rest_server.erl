@@ -55,39 +55,16 @@ stop(_Args) ->
 % TODO: Update port args with config variables
 init([Args]) ->
 	print_banner(Args),
-	
-	Module = case proplists:get_value(module, Args) of
-    undefined -> hermes;
-    Else -> Else
-  end,
-	StartArgs = lists:map(fun ({Var, Default}) -> 
-  	  case application:get_env(Module, Var) of
-        undefined -> Default;
-  	    V -> V
-      end
-	  end, [
-	        {port, 9999}
-	       ]),
+	StartArgs = get_start_args(Args),
 	
   start_mochiweb(StartArgs),
   {ok, #state{}}.
 
 
 print_banner(Args) ->
-  Module = case proplists:get_value(module, Args) of
-    undefined -> hermes;
-    Else -> Else
-  end,
   io:format("~s~n~s~n~n",
             [?SOFTWARE_NAME, ?COPYRIGHT_MESSAGE]),
-  [Port] = lists:map(fun ({Var, Default}) -> 
-      	  case application:get_env(Module, Var) of
-            undefined -> Default;
-      	    V -> V
-          end
-        end, [
-              {port, 9999}
-             ]),
+  [Port] = get_start_args(Args),
              
   Settings =  [
                 {"node ", node()},
@@ -246,3 +223,21 @@ jsonify(JsonifiableBody) ->
         ]
     })
   ].
+  
+%%--------------------------------------------------------------------
+%% Function: get_start_args (Args) -> [port]
+%% Description: Get the start args from the application env
+%%--------------------------------------------------------------------
+get_start_args(Args) ->
+  Module = case proplists:get_value(module, Args) of
+    undefined -> hermes;
+    Else -> Else
+  end,
+  lists:map(fun ({Var, Default}) -> 
+  	  case application:get_env(Module, Var) of
+        undefined -> Default;
+  	    {ok, V} -> V
+      end
+	  end, [
+	        {port, 9999}
+	       ]).
