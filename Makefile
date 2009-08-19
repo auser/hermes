@@ -9,6 +9,8 @@ EBIN_DIRS				= $(wildcard deps/*/ebin)
 WEB_DIR					= web/
 TEST_DIR				= test/
 WONDERLAND_DIR	= $(WEB_DIR)/wonderland
+DEPS_DIR = deps
+STOPLIGHT_DIR	= $(DEPS_DIR)/stoplight
 APP							= hermes
 
 all: ebin compile
@@ -21,7 +23,7 @@ wonderland:
 	[ -d $(WONDERLAND_DIR) ] || (mkdir $(WEB_DIR) && cd $(WEB_DIR) && git clone git://github.com/auser/wonderland.git)
 	cd $(WONDERLAND_DIR) && git pull origin master
 
-deps: mochi thrift gen_cluster
+deps: mochi thrift gen_cluster stoplight
 
 mochi:
 	@(cd deps/mochiweb;$(MAKE))
@@ -31,6 +33,11 @@ thrift:
 	@(cd deps/thrift;$(MAKE))
 	thrift --gen erl thrift/hermes.thrift
 	@(mv gen-erl/hermes*.hrl include)
+stoplight:
+	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(DEPS_DIR) && cd $(DEPS_DIR) && git clone git://github.com/jashmenn/stoplight.git)
+	cd $(STOPLIGHT_DIR) && git pull origin master
+	cd $(STOPLIGHT_DIR) && rake
+
 	
 compile:
 	@$(ERL) -pa $(EBIN_DIRS) -pa $(EBIN) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'

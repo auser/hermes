@@ -12,3 +12,4 @@ ebin/*.rel
 ebin/*.script
 web/
 *.rrd
+deps/stoplight
