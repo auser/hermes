@@ -29,7 +29,8 @@
 
 -record(state, {
           start_args,   % args to start with
-          thrift_pid    % thrift client pid
+          thrift_pid,   % thrift client pid
+          retry_times   % times to retry
        }).
                  
 -define(SERVER, ?MODULE).
@@ -104,7 +105,8 @@ init([Args]) ->
   end,
   {ok, #state{
     start_args = Args,
-    thrift_pid = P
+    thrift_pid = P,
+    retry_times = 0
   }}.
 
 %%--------------------------------------------------------------------

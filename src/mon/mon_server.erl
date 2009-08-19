@@ -8,16 +8,19 @@
 
 -module (mon_server).
 -include ("hermes.hrl").
--behaviour(gen_server).
+-behaviour(gen_cluster).
 
 %% API
 -export([start_link/1, stop/0]).
 -export ([list_monitors/0]).
 -export ([get_average/1, get_average_over/2]).
+% Aggregates
+-export ([get_all_averages/0, cluster_averages/0]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-         terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+% gen_cluster callback
+-export([handle_join/3, handle_node_joined/3, handle_leave/4]).
 
 -record(state, {}).
 -define(SERVER, ?MODULE).
@@ -30,28 +33,40 @@
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Args) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
+  gen_cluster:start_link({local, ?SERVER}, ?MODULE, [Args], []).
 
-stop() ->
-  gen_server:call(?SERVER, stop).
+stop() -> gen_cluster:call(?SERVER, stop).
+
+cluster_averages() ->
+  {ok, NodePids} = gen_cluster:plist(?SERVER),
+  lists:map(fun(Pid) ->
+      rpc:call(node(Pid), ?MODULE, get_all_averages, [])
+    end, NodePids).
 
 %%--------------------------------------------------------------------
 %% Function: get_average (Module) -> {ok, Fetched}
 %% Description: Get the average of a specific module
 %%--------------------------------------------------------------------
-get_average(Module) -> gen_server:call(?MODULE, {get_average, Module}).
+get_average(Module) -> gen_cluster:call(?MODULE, {get_average, Module}).
 
+%%--------------------------------------------------------------------
+%% Function: get_all_averages () -> {[Averages]}
+%% Description: Get all the averages for every monitor
+%%--------------------------------------------------------------------
+get_all_averages() ->
+  gen_cluster:call(?SERVER, {get_all_averages}).
+  
 %%--------------------------------------------------------------------
 %% Function: get_average_over (Module, Seconds) -> {ok, Fetched}
 %% Description: Get the average of a specific module over Seconds
 %%--------------------------------------------------------------------
-get_average_over(Module, Seconds) -> gen_server:call(?MODULE, {get_average, Module, Seconds}).
+get_average_over(Module, Seconds) -> gen_cluster:call(?MODULE, {get_average, Module, Seconds}).
 
 %%--------------------------------------------------------------------
 %% Function: list_monitors () -> {ok, List}
 %% Description: Get the list of monitors and reasonable statistics
 %%--------------------------------------------------------------------
-list_monitors() -> gen_server:call(?MODULE, {list_monitors}).
+list_monitors() -> gen_cluster:call(?MODULE, {list_monitors}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -87,6 +102,11 @@ handle_call({get_average, Module, Seconds}, _From, State) ->
 handle_call({get_average, Module}, _From, State) ->
   Fetched = handle_get_average(Module, 60),
   {reply, Fetched, State};
+  
+handle_call({get_all_averages}, _From, State) ->
+  Monitors = get_monitors(),
+  Reply = lists:map(fun(Mon) -> handle_get_average(Mon, 60) end, Monitors),
+  {reply, Reply, State};  
 
 handle_call(stop, _From, State) ->
   {stop, normal, stopped, State};
@@ -130,6 +150,35 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
+%%--------------------------------------------------------------------
+%% Function: handle_join(JoiningPid, Pidlist, State) -> {ok, State} 
+%%     JoiningPid = pid(),
+%%     Pidlist = list() of pids()
+%% Description: Called whenever a node joins the cluster via this node
+%% directly. JoiningPid is the node that joined. Note that JoiningPid may
+%% join more than once. Pidlist contains all known pids. Pidlist includes
+%% JoiningPid.
+%%--------------------------------------------------------------------
+handle_join(JoiningPid, Pidlist, State) ->
+    io:format(user, "~p:~p handle join called: ~p Pidlist: ~p~n", [?MODULE, ?LINE, JoiningPid, Pidlist]),
+    {ok, State}.
+
+%%--------------------------------------------------------------------
+%% Function: handle_node_joined(JoiningPid, Pidlist, State) -> {ok, State} 
+%%     JoiningPid = pid(),
+%%     Pidlist = list() of pids()
+%% Description: Called whenever a node joins the cluster via another node and
+%%     the joining node is simply announcing its presence.
+%%--------------------------------------------------------------------
+
+handle_node_joined(JoiningPid, Pidlist, State) ->
+    io:format(user, "~p:~p handle node_joined called: ~p Pidlist: ~p~n", [?MODULE, ?LINE, JoiningPid, Pidlist]),
+    {ok, State}.
+
+handle_leave(LeavingPid, Pidlist, Info, State) ->
+    io:format(user, "~p:~p handle leave called: ~p, Info: ~p Pidlist: ~p~n", [?MODULE, ?LINE, LeavingPid, Info, Pidlist]),
+    {ok, State}.
+    
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------

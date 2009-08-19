@@ -3,7 +3,7 @@
 # Make the boot file, if necessary
 cd `dirname $0`
 if [[ ! -f ebin/hermes.boot ]]; then
-	make all_boot
+	make boot
 fi
 
 # Find the next free erlang nodename using epmd  

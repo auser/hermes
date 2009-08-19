@@ -99,7 +99,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     
     case Out of
       {ok, Resp} ->
-        ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
+        % ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
         timer:sleep(1000),
         Resp;
       {error, _} -> ok

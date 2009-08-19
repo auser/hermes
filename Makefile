@@ -21,10 +21,12 @@ wonderland:
 	[ -d $(WONDERLAND_DIR) ] || (mkdir $(WEB_DIR) && cd $(WEB_DIR) && git clone git://github.com/auser/wonderland.git)
 	cd $(WONDERLAND_DIR) && git pull origin master
 
-deps: mochi thrift
+deps: mochi thrift gen_cluster
 
 mochi:
 	@(cd deps/mochiweb;$(MAKE))
+gen_cluster:
+	@(cd deps/gen_cluster;$(MAKE))
 thrift:
 	@(cd deps/thrift;$(MAKE))
 	thrift --gen erl thrift/hermes.thrift
