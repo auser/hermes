@@ -8,12 +8,13 @@ COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
 EBIN_DIRS				= $(wildcard deps/*/ebin)
 WEB_DIR					= web/
 TEST_DIR				= test/
+TEST_EBIN_DIR				= $(TEST_DIR)/ebin
 WONDERLAND_DIR	= $(WEB_DIR)/wonderland
 DEPS_DIR = deps
 STOPLIGHT_DIR	= $(DEPS_DIR)/stoplight
 APP							= hermes
 
-all: ebin compile
+all: $(TEST_EBIN_DIR) ebin compile
 all_boot: all boot
 wonderland_boot: wonderland all_boot
 start: all start_all
@@ -49,7 +50,7 @@ edoc:
 eunit:
 	cd test/include/eunit && make
 	
-test: compile
+test: $(TEST_EBIN_DIR) compile
 	$(ERL) -noshell -pa $(EBIN) -pa test/ebin -pa test/include/gen_server_mock/ebin -s test_suite test -s init stop
 	
 boot:
@@ -66,3 +67,6 @@ clean:
 
 clean_mochiweb:
 	rm -rf deps/mochiweb/ebin/*.beam
+
+$(TEST_EBIN_DIR):
+	@mkdir $(TEST_EBIN_DIR)
