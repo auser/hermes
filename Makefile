@@ -51,19 +51,19 @@ eunit:
 	cd test/include/eunit && make
 	
 test: $(TEST_EBIN_DIR) compile
-	$(ERL) -noshell -pa $(EBIN) -pa test/ebin -pa test/include/gen_server_mock/ebin -s test_suite test -s init stop
+	$(ERL) -noshell -pa $(EBIN) -pa $(TEST_EBIN) -pa test/include/gen_server_mock/ebin -s test_suite test -s init stop
 	
 boot:
-	(cd ebin; erl -pa ebin -noshell -run make_boot write_scripts hermes)
+	(cd $(EBIN); erl -pa $(EBIN) -noshell -run make_boot write_scripts hermes)
 
 start_all:
-	(cd ebin; erl -pa ebin -noshell -sname hermes -boot hermes)
+	(cd $(EBIN); erl -pa $(EBIN) -noshell -sname hermes -boot hermes)
 
-ebin:
-	@mkdir ebin
+$(EBIN):
+	@mkdir $(EBIN)
 
 clean:
-	rm -rf ebin/*.beam ebin/erl_crash.dump erl_crash.dump ebin/*.boot ebin/*.rel ebin/*.script test/ebin/*.beam
+	rm -rf $(EBIN)/*.beam $(EBIN)/erl_crash.dump erl_crash.dump $(EBIN)/*.boot $(EBIN)/*.rel $(EBIN)/*.script $(TEST_EBIN)/*.beam
 
 clean_mochiweb:
 	rm -rf deps/mochiweb/ebin/*.beam
