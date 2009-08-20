@@ -1,17 +1,18 @@
 LIBDIR					= `erl -eval 'io:format("~s~n", [code:lib_dir()])' -s init stop -noshell`
-VERSION					= 0.0.1
-CC							= erlc
-ERL							= erl
-EBIN						= ebin
+VERSION					= $(shell cat VERSION | tr -d '\n')
+CC						= erlc
+ERL						= erl
+EBIN					= ebin
 CFLAGS					= +debug_info -W0 -I include -pa $(EBIN) -I gen-erl/
 COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
 EBIN_DIRS				= $(wildcard deps/*/ebin)
 WEB_DIR					= web/
 TEST_DIR				= test/
-TEST_EBIN_DIR				= $(TEST_DIR)/ebin
+TEST_EBIN_DIR			= $(TEST_DIR)/ebin
 WONDERLAND_DIR	= $(WEB_DIR)/wonderland
 DEPS_DIR = deps
 STOPLIGHT_DIR	= $(DEPS_DIR)/stoplight
+STOPLIGHT_VERSION = $(shell cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
 APP							= hermes
 
 all: $(TEST_EBIN_DIR) ebin compile
@@ -54,7 +55,7 @@ test: $(TEST_EBIN_DIR) compile
 	$(ERL) -noshell -pa $(EBIN) -pa $(TEST_EBIN) -pa test/include/gen_server_mock/ebin -s test_suite test -s init stop
 	
 boot:
-	(cd $(EBIN); erl -pa $(EBIN) -noshell -run make_boot write_scripts hermes)
+	(cd $(EBIN); erl -pa ../$(EBIN) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
 
 start_all:
 	(cd $(EBIN); erl -pa $(EBIN) -noshell -sname hermes -boot hermes)
