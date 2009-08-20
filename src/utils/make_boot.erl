@@ -5,7 +5,7 @@
 %%% cd ebin; erl -pa . -noshell -run make_boot write_scripts app version [app version]... 
 %%% 
 %%% e.g.:
-%%% cd ebin; erl -pa . -noshell -run make_boot write_scripts hermes "0.2" stoplight "0.1"
+%%% cd ebin; erl -pa . -noshell -run make_boot write_scripts hermes "0.0.2" stoplight "0.0.1"
 %%%
 -module(make_boot).
 -export([write_scripts/1]).

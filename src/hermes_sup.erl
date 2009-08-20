@@ -18,6 +18,8 @@ init([Type, Args]) ->
   RestServerSup   = { rest_server,    {rest_app, start, [Type, Args]}, permanent,2000,worker,[]},
   % AmbassadorApp   = { ambassador_app, {ambassador_app, start, [Type, Args]}, permanent, 2000, worker, []},
   NagApp          = { nag_app,        {nag_app, start, [Type, Args]}, permanent, 2000, worker, []},
+
+  application:start(stoplight),
   
   {ok,{_SupFlags = {one_for_one, ?MAXIMUM_RESTARTS, ?MAX_DELAY_TIME},[
     HermesLoggerSup,

@@ -11,6 +11,6 @@
         {registered, [hermes]},
         {applications, [kernel, stdlib]},
         {included_applications, [stoplight]},
-        {mod, {hermes, []}}
+        {start_phases, [{go,[]}]},
+        {mod, {application_starter,[hermes,[]]}}
 ]}.
-
