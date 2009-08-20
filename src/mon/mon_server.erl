@@ -15,7 +15,8 @@
 -export ([list_monitors/0]).
 -export ([get_average/1, get_average_over/2]).
 % Aggregates
--export ([get_all_averages/0, cluster_averages/0]).
+-export ([get_all_averages/0, get_all_averages/1, get_all_averages/2,
+          cluster_average/0, cluster_average/1, cluster_average/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -37,11 +38,20 @@ start_link(Args) ->
 
 stop() -> gen_cluster:call(?SERVER, stop).
 
-cluster_averages() ->
+cluster_average() ->
+  Monitors = get_monitors(),
+  cluster_average(Monitors, 300).
+  
+cluster_average(Time) ->
+  Monitors = get_monitors(),
+  cluster_average(Monitors, Time).
+
+cluster_average(Monitors, Time) ->
   {ok, NodePids} = gen_cluster:plist(?SERVER),
-  lists:map(fun(Pid) ->
-      rpc:call(node(Pid), ?MODULE, get_all_averages, [])
-    end, NodePids).
+  lists:map(fun(Pid) -> 
+    MonitorOutput = rpc:call(node(Pid), ?MODULE, get_all_averages, [Monitors, Time]),
+    {node(Pid), MonitorOutput}
+  end, NodePids).
 
 %%--------------------------------------------------------------------
 %% Function: get_average (Module) -> {ok, Fetched}
@@ -53,8 +63,9 @@ get_average(Module) -> gen_cluster:call(?MODULE, {get_average, Module}).
 %% Function: get_all_averages () -> {[Averages]}
 %% Description: Get all the averages for every monitor
 %%--------------------------------------------------------------------
-get_all_averages() ->
-  gen_cluster:call(?SERVER, {get_all_averages}).
+get_all_averages() -> gen_cluster:call(?SERVER, {get_all_averages}).
+get_all_averages(Time) -> gen_cluster:call(?SERVER, {get_all_averages, Time}).
+get_all_averages(Monitors, Time) -> gen_cluster:call(?SERVER, {get_all_averages, Monitors, Time}).
   
 %%--------------------------------------------------------------------
 %% Function: get_average_over (Module, Seconds) -> {ok, Fetched}
@@ -103,9 +114,8 @@ handle_call({get_average, Module}, _From, State) ->
   Fetched = handle_get_average(Module, 60),
   {reply, Fetched, State};
   
-handle_call({get_all_averages}, _From, State) ->
-  Monitors = get_monitors(),
-  Reply = lists:map(fun(Mon) -> handle_get_average(Mon, 60) end, Monitors),
+handle_call({get_all_averages, Monitors, Time}, _From, State) ->  
+  Reply = lists:map(fun(Mon) -> handle_get_average(Mon, Time) end, Monitors),
   {reply, Reply, State};  
 
 handle_call(stop, _From, State) ->

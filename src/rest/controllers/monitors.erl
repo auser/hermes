@@ -1,4 +1,5 @@
 -module (monitors).
+-include ("hermes.hrl").
 -export ([get/1, post/2, put/2, delete/2]).
 
 get([]) ->
@@ -9,10 +10,11 @@ get([]) ->
         unknown_monitor -> unknown_monitor;
         _Else ->
           Vals = handle_get_monitor_over_time(erlang:atom_to_list(Monitor), 600),
-          {struct, [{Monitor, Vals}]} 
+          {struct, [{Monitor, Vals}]}
       end
     end,
     Monitors),
+  % ?INFO("MonitorData: ~p~n", [MonitorData]),
   {"monitors", MonitorData };
 
 get([Monitor]) ->
