@@ -10,7 +10,7 @@ start() ->
 start(Type, Args) ->  
     hermes_sup:start(Type, Args).
 
-start_phase(go, normal, Args) ->
+start_phase(go, normal, _Args) ->
     ok.
 
 stop() -> stop([]).
