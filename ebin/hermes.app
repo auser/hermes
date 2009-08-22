@@ -1,6 +1,6 @@
 {application, hermes, [
         {description, "Hermes"},
-        {vsn, "0.1"},
+        {vsn, "0.0.1"},
         {modules, [hermes]},
         {env, [
           {port, 8642},
@@ -10,6 +10,7 @@
         ]},
         {registered, [hermes]},
         {applications, [kernel, stdlib]},
-        {mod, {hermes, []}}
+        {included_applications, [stoplight]},
+        {start_phases, [{go,[]}]},
+        {mod, {application_starter,[hermes,[]]}}
 ]}.
-

@@ -7,8 +7,8 @@ if [[ ! -f ebin/hermes.boot ]]; then
 fi
 
 # Find the next free erlang nodename using epmd  
- 
 EXISTING_NAMES=`epmd -names`
+
 DEP_EBINS=`find deps -type d | grep -v \/test\/ | grep ebin | grep -v .svn | grep -v .git`
  
 CLIENT_NAME="hermes"
