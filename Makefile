@@ -43,7 +43,13 @@ eunit:
 	cd test/include/eunit && make
 	
 test: compile
-	$(ERL) -noshell -pa $(EBIN) -pa test/ebin -pa test/include/gen_server_mock/ebin -s test_suite test -s init stop
+	$(ERL) 	-sname testnode -setcookie test \
+					-noshell -pa $(EBIN) \
+					-pa deps/*/ebin \
+					-pa test/ebin \
+					-pa test/include/gen_server_mock/ebin \
+					-s test_suite test \
+					-s init stop
 	
 boot:
 	(cd ebin; erl -pa ebin -noshell -run make_boot write_scripts hermes)

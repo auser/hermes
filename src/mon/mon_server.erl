@@ -12,8 +12,13 @@
 
 %% API
 -export([start_link/1, stop/0]).
--export ([list_monitors/0]).
--export ([get_average/1, get_average_over/2]).
+
+-export ([  
+            get_average/1, 
+            get_average_over/2,
+            get_latest_average_for/1,
+            list_monitors/0
+         ]).
 % Aggregates
 -export ([get_all_averages/0, get_all_averages/1, get_all_averages/2,
           cluster_average/0, cluster_average/1, cluster_average/2]).
@@ -38,6 +43,20 @@ start_link(Args) ->
 
 stop() -> gen_cluster:call(?SERVER, stop).
 
+%%--------------------------------------------------------------------
+%% Function: get_latest_average_for (Monitor) -> float
+%% Description: Get the latest average for the 
+%%  monitor given (60 seconds)
+%%--------------------------------------------------------------------
+get_latest_average_for([Monitor]) ->
+  Avg = get_average_over(Monitor, 60),
+  {Monitor, [LastTuple|_]} = Avg,
+  {_Timestamp, Float} = LastTuple,
+  Float.
+
+%%====================================================================
+%% CLUSTERS
+%%====================================================================
 cluster_average() ->
   Monitors = get_monitors(),
   cluster_average(Monitors, 300).

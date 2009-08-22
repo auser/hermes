@@ -11,7 +11,12 @@
 
 %% API
 -export([start/0, start_link/1, start_named/2]).
--export ([handle_election/1]).
+
+-export ([call_election/2]).
+
+-export ([  nodes/0,
+            nodes/1
+         ]).
 
 % gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -22,6 +27,7 @@
 
 -define(TRACE(X, M),  io:format(user, "TRACE ~p:~p ~p ~p~n", [?MODULE, ?LINE, X, M])).
 -define(SERVER, ?MODULE).
+-define (BALLOT, mapreduce).
 
 -record(state, {
         
@@ -41,16 +47,22 @@ start() -> start_link([]).
 %% Description: Starts the server
 %%--------------------------------------------------------------------
 start_link(Config) ->
-    gen_cluster:start_link({local, ?SERVER}, ?MODULE, [Config], []).
+  gen_cluster:start_link({local, ?MODULE}, ?SERVER, [Config], []).
 
 start_named(Name, Config) ->
-    gen_cluster:start_link({local, Name}, ?MODULE, [Config], []).
+  ?TRACE("STarting named", [Name, Config]),
+  gen_cluster:start_link({local, Name}, ?MODULE, [Config], []).
 
-call_election(Name) ->
-  gen_cluster:call(?SERVER, {call_election, Name}).
+call_election(Name, Value) ->  
+  MFA = [ambassador, ask, ["run_monitor", [mon_server, get_latest_average_for, [Name]]]],
+  ?BALLOT:submit(MFA, Value).
+
+nodes() ->
+  ?MODULE:nodes(?SERVER).
   
-% handle_election(Name) ->
-  % ambassador:ask()
+nodes(Name) ->
+  {ok, NodePids} = gen_cluster:plist(Name),
+  [ node(Pid) || Pid <- NodePids ].
 
 %%====================================================================
 %% gen_server callbacks
@@ -63,7 +75,7 @@ call_election(Name) ->
 %%                         {stop, Reason}
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
-init([]) ->
+init(_A) ->
   {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -75,12 +87,6 @@ init([]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-
-handle_call({call_election, Name}, _From, State) ->
-  {ok, NodePids} = gen_cluster:plist(?SERVER),
-  Results = lists:map(fun(Pid) ->  rpc:call(node(Pid), ?MODULE, handle_election, [Name]) end, NodePids),
-  {reply, Results, State};
-
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
@@ -134,7 +140,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% join more than once. Pidlist contains all known pids. Pidlist includes
 %% JoiningPid.
 %%--------------------------------------------------------------------
-handle_join(JoiningPid, Pidlist, State) ->
+handle_join(_JoiningPid, _Pidlist, State) ->
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -145,10 +151,10 @@ handle_join(JoiningPid, Pidlist, State) ->
 %%     the joining node is simply announcing its presence.
 %%--------------------------------------------------------------------
 
-handle_node_joined(JoiningPid, Pidlist, State) ->
+handle_node_joined(_JoiningPid, _Pidlist, State) ->
     {ok, State}.
 
-handle_leave(LeavingPid, Pidlist, Info, State) ->
+handle_leave(_LeavingPid, _Pidlist, _Info, State) ->
     {ok, State}.
 
 

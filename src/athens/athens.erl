@@ -8,15 +8,16 @@
 
 -module (athens).
 
--export ([elect/1]).
+-export ([  call_election/2,
+            nodes/0
+         ]).
+
+nodes() ->  athens_srv:nodes().
 
 % Call an election
-elect(Name) ->
-  Plist = get_plist(),
-  ok.
-  
+call_election(MFA, Value) ->
+  athens_srv:call_election(MFA, Value).
+
 %%====================================================================
 %% PRIVATE
 %%====================================================================
-get_plist() ->
-  gen_cluster:plist(athens_srv).
