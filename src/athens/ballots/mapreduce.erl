@@ -48,7 +48,7 @@ reduce(From, MFA, Value, Acc, Nodes) ->
 %%--------------------------------------------------------------------
 collect_reductions(TotalNumNodes, TotalNumNodes, _, Acc) -> (Acc / TotalNumNodes);
 collect_reductions(NumResponses, TotalNumNodes, Val, Acc) ->
-  ?TRACE("collect_reductions: ~p, ~p, ~p, ~p~n", [NumResponses, TotalNumNodes, Val, Acc]),
+  ?TRACE("collect_reductions: ~p, ~p, ~p, ~p, ~p~n", [self(), NumResponses, TotalNumNodes, Val, Acc]),
   receive
     {_Node, Val}    -> 
       ?TRACE("Got back value", [Val]),
@@ -56,11 +56,14 @@ collect_reductions(NumResponses, TotalNumNodes, Val, Acc) ->
     {_Node, Else}  -> 
       ?TRACE("Got back else", [Else]),
       collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc);
-    {'EXIT', _, _}  -> collect_reductions(NumResponses, TotalNumNodes - 1, Val, Acc)
+    {'EXIT', A, B}  -> 
+        ?TRACE("got EXIT", [A, B]),
+        collect_reductions(NumResponses, TotalNumNodes - 1, Val, Acc)
   end.
 
 run_mfa(From, MFA, Node) ->
   [M,F,A] = MFA,
+  ?TRACE("running mfa", [self, self(), from, From, node, Node, mfa, MFA]),
   Val = rpc:call(Node, M, F, A),
   From ! {Node, Val}.
 
