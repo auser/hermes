@@ -7,7 +7,10 @@
 setup() ->
   NodeList = [2,3],
   {ok, Pid} = start_node(1, undefined),
-  [ start_node(Name, Pid) || Name <- NodeList ].
+  lists:map(fun(Name) ->
+    {ok, P} = start_node(Name, Pid),
+    P
+    end, NodeList ).
 
 teardown(Servers) ->
   lists:map(fun(Pname) -> 
@@ -20,12 +23,14 @@ teardown(Servers) ->
 all_test_() ->
   Nodes = [node1, node2, node3],
   {setup, fun setup/0, fun teardown/1,
-    fun() ->
-      NodeList = [ node(Name) || Name <- test_nodes() ],
-      ?TRACE("NodeList", [NodeList]),
-      O = mapreduce:submit([?MODULE, collect, [2, NodeList]], 1, Nodes),
-      ?TRACE("Ran tests: ~p~n", [O])
-    end
+    {timeout, 300, 
+      fun() ->
+        NodeList = [ node(Name) || Name <- test_nodes() ],
+        ?TRACE("NodeList", [NodeList]),
+        O = mapreduce:submit([?MODULE, collect, [2, NodeList]], 1, Nodes),
+        ?TRACE("Ran tests: ~p~n", [O])
+      end
+    }
   }.
 
 

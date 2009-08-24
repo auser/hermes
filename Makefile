@@ -7,9 +7,8 @@ CFLAGS					= +debug_info -W0 -I include -pa $(EBIN) -I gen-erl/
 COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
 EBIN_DIRS				= $(wildcard deps/*/ebin)
 WEB_DIR					= web/
-TEST_DIR				= test/
+TEST_DIR				= test
 TEST_EBIN_DIR		= $(TEST_DIR)/ebin
-WONDERLAND_DIR	= $(WEB_DIR)/wonderland
 DEPS_DIR = deps
 STOPLIGHT_DIR	= $(DEPS_DIR)/stoplight
 STOPLIGHT_VERSION = $(shell cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
@@ -20,10 +19,6 @@ all_boot: all boot
 wonderland_boot: wonderland all_boot
 start: all start_all
 rstakeout: wonderland compile
-
-wonderland:
-	[ -d $(WONDERLAND_DIR) ] || (mkdir $(WEB_DIR) && cd $(WEB_DIR) && git clone git://github.com/auser/wonderland.git)
-	cd $(WONDERLAND_DIR) && git pull origin master
 
 deps: mochi thrift gen_cluster stoplight
 
@@ -55,7 +50,7 @@ test: $(TEST_EBIN_DIR) compile
 	$(ERL) 	-sname testnode -setcookie test \
 					-noshell -pa $(EBIN) \
 					-pa deps/*/ebin \
-					-pa $(TEST_EBIN) \
+					-pa $(TEST_EBIN_DIR) \
 					-pa test/include/gen_server_mock/ebin \
 					-s test_suite test \
 					-s init stop
@@ -70,7 +65,8 @@ $(EBIN):
 	@mkdir $(EBIN)
 
 clean:
-	rm -rf $(EBIN)/*.beam $(EBIN)/erl_crash.dump erl_crash.dump $(EBIN)/*.boot $(EBIN)/*.rel $(EBIN)/*.script $(TEST_EBIN)/*.beam
+	echo $(TEST_EBIN_DIR)
+	rm -rf $(EBIN)/*.beam $(EBIN)/erl_crash.dump erl_crash.dump $(EBIN)/*.boot $(EBIN)/*.rel $(EBIN)/*.script $(TEST_EBIN_DIR)/*.beam
 
 clean_mochiweb:
 	rm -rf deps/mochiweb/ebin/*.beam
