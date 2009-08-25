@@ -5,19 +5,10 @@
 -export ([test_athens_response_function/1]).
 
 setup() ->
-  % ttb:tracer(node(), [{file,"trace/ttb"},{process_info,true}]),
-  % ttb:tracer(node(), [{file,"trace/ttb"},{process_info,true}]),
-  % ttb:p(self(), [call,send,messages,sos,sol]),
-  % mon_method([?MODULE, handle_map, []]),
-  start_n_nodes(30).
+  start_n_nodes(120).
 
 teardown(_Servers) ->
-  % lists:map(fun({_Name, Pid}) ->
-  %     gen_cluster:cast(Pid, stop)
-  %  end, Servers),
   teardown_all_nodes(),
-   % ttb:stop(),
-   % ttb:format("trace"),
   ok.
   
 all_test_() ->
@@ -27,12 +18,12 @@ all_test_() ->
         NodeList = test_nodes(),
         % O = athens_srv:submit_ballot(whereis(node1), ?MODULE, test_athens_response_function, [1]),
         % O = mapreduce:submit(?MODULE, F, 1, test_nodes()),
-        ?assertEqual(1/2, athens_srv:call_election(?MODULE, test_athens_response_function, [2], NodeList)),
-        ?assertEqual(1/3, athens_srv:call_election(?MODULE, test_athens_response_function, [2], [node1, node2, node3])),
-        ?assertEqual(1.0, athens_srv:call_election(?MODULE, test_athens_response_function, [2], [node2, node4, node6])),
-        ?assertEqual(1/4, athens_srv:call_election(?MODULE, test_athens_response_function, [2], [node1, node3, node5, node8])),
-        ?assertEqual(0.0, athens_srv:call_election(?MODULE, test_athens_response_function, [4], [node1, node3, node5])),
-        ?assertEqual(1/30,athens_srv:call_election(?MODULE, test_athens_response_function, [30], NodeList))
+        ?assertEqual(1/2, athens_srv:call_election(?MODULE, test_athens_response_function, [2], 2, NodeList))
+        ,?assertEqual(1/3, athens_srv:call_election(?MODULE, test_athens_response_function, [2], 2, [node1, node2, node3]))
+        ,?assertEqual(1.0, athens_srv:call_election(?MODULE, test_athens_response_function, [2], 2, [node2, node4, node6]))
+        ,?assertEqual(1/4, athens_srv:call_election(?MODULE, test_athens_response_function, [2], 2, [node1, node3, node5, node8]))
+        ,?assertEqual(0.0, athens_srv:call_election(?MODULE, test_athens_response_function, [4], 2, [node1, node3, node5]))
+        ,?assertEqual(1/30,athens_srv:call_election(?MODULE, test_athens_response_function, [30],30, NodeList))
       end
     }
   }.

@@ -9,15 +9,23 @@
 -module (athens).
 
 -export ([  call_election/2,
-            nodes/0
+            call_ambassador_election/2,
+            nodes/0,
+            ambassador_check/1
          ]).
 
 nodes() ->  athens_srv:nodes().
 
 % Call an election
+call_ambassador_election(Name, VoteValue) ->
+  athens_srv:call_election(?MODULE, ambassador_check, [Name], VoteValue).
+  
 call_election(MFA, Value) ->
   athens_srv:call_election(MFA, Value).
 
 %%====================================================================
 %% PRIVATE
 %%====================================================================
+ambassador_check(Mon) ->
+  LatestAverage = mon_server:get_latest_average_for(Mon),
+  ambassador:ask("run_monitor", [ erlang:atom_to_list(Mon), erlang:float_to_list(LatestAverage) ]).

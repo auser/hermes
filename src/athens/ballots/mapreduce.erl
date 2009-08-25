@@ -1,31 +1,30 @@
 -module (mapreduce).
 -include ("hermes.hrl").
--export ([submit/3, submit/4]).
+-export ([submit/4, submit/5]).
 
-submit(M, F, Value) ->
+submit(M, F, A, Value) ->
   Nodes = athens:nodes(),
-  submit(M, F, Value, Nodes).
+  submit(M, F, A, Value, Nodes).
   
-submit(M, F, A, NodeList) ->
+submit(M, F, A, Comparison, NodeList) ->
   S = self(),
   Acc = 0.0,
   Nodes = ensure_are_nodes(NodeList),
-  % Pid = spawn(fun() -> 
-    reduce(S, M, F, A, Acc, Nodes)
-  % end)
+  Pid = spawn(fun() -> 
+    reduce(S, M, F, A, Comparison, Acc, Nodes)
+  end)
   ,receive
     {_Pid, R} -> R
   end.
   
-reduce(From, M, F, A, Acc0, Nodes) ->
+reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
   process_flag(trap_exit, true),
   ReducePid = self(),
   
   lists:foreach(fun(Node) ->
       spawn_link(fun() -> run_fun(ReducePid, [M,F, [A]], Node) end)
     end, Nodes),
-    
-  [ComparisonValue] = A,
+  
   TotalNumNodes = length(Nodes),
   Dict0 = dict:new(),
   % Collect the map reduce
