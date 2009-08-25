@@ -12,7 +12,15 @@
 %% API
 -export([start/0, start_link/1, start_named/2]).
 
--export ([call_election/2]).
+% TODO: REFINE
+-export ([  
+            call_election/4,
+            call_election/5
+         ]).
+         
+% -export ([  
+%             submit_ballot/4
+%          ]).
 
 -export ([  nodes/0,
             nodes/1
@@ -50,12 +58,17 @@ start_link(Config) ->
   gen_cluster:start_link({local, ?MODULE}, ?SERVER, [Config], []).
 
 start_named(Name, Config) ->
-  ?TRACE("STarting named", [Name, Config]),
   gen_cluster:start_link({local, Name}, ?MODULE, [Config], []).
 
-call_election(Name, Value) ->  
-  MFA = [ambassador, ask, ["run_monitor", [mon_server, get_latest_average_for, [Name]]]],
-  ?BALLOT:submit(MFA, Value).
+call_election(M, F, A, Comparison) ->
+  {ok, NodePids} = gen_cluster:plist(?SERVER),
+  ?BALLOT:submit(M, F, A, Comparison, NodePids).
+
+call_election(M, F, A, Comparison, Nodes) ->
+  ?BALLOT:submit(M, F, A, Comparison, Nodes).
+  
+% submit_ballot(On, M,F,A) ->
+%   gen_cluster:call(On, {ballot, M,F,A}).
 
 nodes() ->
   ?MODULE:nodes(?SERVER).
@@ -87,6 +100,14 @@ init(_A) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
+handle_call({election, M, F, A, Nodes}, _From, State) ->
+  O = ?BALLOT:submit(M, F, A, Nodes),
+  {reply, O, State};
+  
+handle_call({ballot, M, F, A}, _From, State) ->
+  O = apply(M, F, A),
+  {reply, O, State};
+  
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
@@ -106,7 +127,8 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
+  ?TRACE("handle_info", [Info]),
   {noreply, State}.
 
 %%--------------------------------------------------------------------

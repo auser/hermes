@@ -1,55 +1,43 @@
 -module (mapreduce).
 -include ("hermes.hrl").
--export ([submit/2, submit/3]).
+-export ([submit/4, submit/5]).
 
-submit(Fun, Value) ->
+submit(M, F, A, Value) ->
   Nodes = athens:nodes(),
-  submit(Fun, Value, Nodes).
+  submit(M, F, A, Value, Nodes).
   
-submit(Fun, Args, NodeList) ->
-  S = self(),  
+submit(M, F, A, Comparison, NodeList) ->
+  S = self(),
   Acc = 0.0,
   Nodes = ensure_are_nodes(NodeList),
-  ?TRACE("Nodes", Nodes),
-  % Pid = spawn(fun() -> 
-    reduce(S, Fun, Args, Acc, Nodes)
-  % end),
-  ,
-  receive
-      {_Pid, R} -> R
-    end.
+  Pid = spawn(fun() -> 
+    reduce(S, M, F, A, Comparison, Acc, Nodes)
+  end)
+  ,receive
+    {Pid, R} -> R
+  end.
   
-reduce(From, Fun, ComparisonValue, Acc0, Nodes) ->
+reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
   process_flag(trap_exit, true),
   ReducePid = self(),
   
   lists:foreach(fun(Node) ->
-      spawn_link(fun() -> run_fun(ReducePid, Fun, ComparisonValue) end)
+      spawn_link(fun() -> run_fun(ReducePid, [M,F, [A]], Node) end)
     end, Nodes),
-
+  
   TotalNumNodes = length(Nodes),
-  % NumResponses = 0,
-  % Dict0 = dict:new(),
-  % {response, Arr} = collect_replies(TotalNumNodes, Args, Dict0),
-  % ReducedAvg = proplists:get_value(average, Arr),
-  % Tot = proplists:get_value(total_responses, Arr),
-  % ?TRACE("ReducedAvg from #", [ReducedAvg, Tot]),
-  % From ! {self(), ReducedAvg}.
-
-  %% make a dictionary to store the Keys 
-  Dict0 = dict:new(), 
-  %% Wait for N Map processes to terminate 
-  Dict1 = collect_replies(TotalNumNodes, Dict0),
-  ?TRACE("Got back from collect_replies", [TotalNumNodes, Acc0]),
-  Acc = dict:fold(fun(Node, Value, A) ->
-      ?TRACE("From Node V = ", [Node, Value]),
+  Dict0 = dict:new(),
+  % Collect the map reduce
+  Dict1 = collect_reductions(TotalNumNodes, Dict0),
+  % Reduce the values
+  Acc = dict:fold(fun(_Node, Value, FoldAcc) ->
       O = case Value of
         ComparisonValue -> 1.0;
-        Else -> 0.0
+        _Else -> 0.0
       end,
-      A + O
+      FoldAcc + O
     end, Acc0, Dict1),
-  ?TRACE("Acc", [Acc]),
+  % Compute the average over the nodes
   TotalAverage = Acc / TotalNumNodes,
   From ! {self(), TotalAverage}.
 
@@ -69,42 +57,27 @@ reduce(From, Fun, ComparisonValue, Acc0, Nodes) ->
 %%  If the known nodes send an exit response when calling the Fun
 %%    then don't expect a response back from the node
 %%--------------------------------------------------------------------
-% collect_reductions(TotalNumNodes, TotalNumNodes, _, Acc) ->  (Acc / TotalNumNodes);
-%   
-% collect_reductions(NumResponses, TotalNumNodes, Val, Acc) ->
-%   ?TRACE("collect_reductions", [self, self(), num_responses, NumResponses, total_num_of_nodes, TotalNumNodes, val, Val, acc, Acc]),
-%   receive
-%     Val ->
-%       ?TRACE("Got back value", [Val, self()]),
-%       collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc + 1);
-%     {'EXIT', _, _}  ->
-%         ?TRACE("got EXIT", [A, B, self()]),
-%         collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc);
-%     Else  ->
-%       ?TRACE("Got back else", [Else]),
-%       collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc)
-%   end.
-
-collect_replies(0, Dict) -> Dict; 
-collect_replies(N, Dict) -> 
+collect_reductions(0, Dict) -> Dict; 
+collect_reductions(N, Dict) -> 
   receive
     {Node, Val} -> 
-    ?TRACE("collect_replies", [N, Node, Val]),
       case dict:is_key(Node, Dict) of 
         true -> 
           Dict1 = dict:append(Node, Val, Dict), 
-          collect_replies(N, Dict1); 
+          collect_reductions(N, Dict1); 
         false -> 
           Dict1 = dict:store(Node, Val, Dict), 
-          collect_replies(N, Dict1) 
+          collect_reductions(N, Dict1) 
       end; 
-    {'EXIT', _, Why} ->
-      ?TRACE("EXIT", [Why]),
-      collect_replies(N-1, Dict) 
+    {'EXIT', _, _Why} ->
+      collect_reductions(N-1, Dict) 
   end.
 
-run_fun(From, Fun, Args) ->    
-  Fun(Args, From).
+run_fun(From, MFA, Node) ->
+  [M,F,A] = MFA,
+  Output = gen_server:call(Node, {ballot, M, F, A}),
+  % {ok, Output} = rpc:call(Node,M,F,A),
+  From ! {self(), Output}.
   
 % Avg = mon_server:get_latest_average_for(Monitor)
 % 

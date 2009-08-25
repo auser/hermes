@@ -8,5 +8,6 @@ all_test_() ->
     {module, config_test},
     {module, rest_server_test},
     {module, utils_test},
+    {module, athens_test},
     {module, mapreduce_test}
   ].

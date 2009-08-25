@@ -56,8 +56,7 @@ shell: compile
 					-pa deps/*/ebin
 
 test: $(TEST_EBIN_DIR) compile
-	$(ERL) 	-sname testnode -setcookie test \
-					-noshell -pa $(EBIN) \
+	$(ERL) 	-noshell -pa $(EBIN) \
 					-pa deps/*/ebin \
 					-pa $(TEST_EBIN_DIR) \
 					-pa test/include/gen_server_mock/ebin \
