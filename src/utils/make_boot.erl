@@ -53,7 +53,7 @@ write_scripts(A, Dest) ->
   case Dest of
       local   ->  systools:make_script(LowernameVersion, [local]);
       release -> 
-          systools:make_script(LowernameVersion),
+          systools:make_script(LowernameVersion, [{path, ["deps/*/ebin"]}]),
           systools:make_tar(LowernameVersion)
   end,
   halt().

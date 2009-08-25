@@ -6,11 +6,13 @@ EBIN					= ebin
 CFLAGS					= +debug_info -W0 -I include -pa $(EBIN) -I gen-erl/
 COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
 EBIN_DIRS				= $(wildcard deps/*/ebin)
+DEP_EBIN_DIRS_DOTDOT    = -pa ../deps/gen_cluster/ebin -pa ../deps/mochiweb/ebin -pa ../deps/thrift/ebin -pz ../include/stoplight/ebin # todo, make dynamic
 WEB_DIR					= web/
 TEST_DIR				= test
 TEST_EBIN_DIR		= $(TEST_DIR)/ebin
 DEPS_DIR = deps
-STOPLIGHT_DIR	= $(DEPS_DIR)/stoplight
+INCLUDES_DIR = include
+STOPLIGHT_DIR	= $(INCLUDE_DIR)/stoplight
 STOPLIGHT_VERSION = $(shell cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
 APP							= hermes
 
@@ -60,14 +62,18 @@ test: $(TEST_EBIN_DIR) compile
 					-s init stop
 	
 boot:
-	(cd $(EBIN); erl -pa ../$(EBIN) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
+	(cd $(EBIN); erl -pa ../$(EBIN) $(DEP_EBIN_DIRS_DOTDOT) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
 
 release:
-	(cd $(EBIN); erl -pa ../$(EBIN) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_release_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
+	(cd $(EBIN); erl -pa ../$(EBIN) $(DEP_EBIN_DIRS_DOTDOT) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_release_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
+
+# (cd $(EBIN); erl -pa ../$(EBIN) -pa ../$(EBIN_DIRS) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run target_system create "hermes-$(VERSION)" -s init stop)
 
 target_system:
-	(cd $(EBIN); erl -pa ../$(EBIN) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run target_system create "hermes-$(VERSION)" -s init stop)
+	escript scripts/target_system create "ebin/hermes-$(VERSION)"
 
+inspect_target_system:
+	exec tar tf ebin/hermes-$(VERSION).tar.gz
 
 start_all:
 	(cd $(EBIN); erl -pa $(EBIN) -noshell -sname hermes -boot hermes)
