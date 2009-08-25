@@ -1,8 +1,8 @@
 LIBDIR					= `erl -eval 'io:format("~s~n", [code:lib_dir()])' -s init stop -noshell`
-VERSION					= $(shell cat VERSION | tr -d '\n')
-CC						= erlc
-ERL						= erl
-EBIN					= ebin
+VERSION					= $(cat VERSION | tr -d '\n')
+CC							= erlc
+ERL							= erl
+EBIN						= ebin
 CFLAGS					= +debug_info -W0 -I include -pa $(EBIN) -I gen-erl/
 COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
 EBIN_DIRS				= $(wildcard deps/*/ebin) $(wildcard include/*/ebin)
@@ -10,10 +10,10 @@ DEP_EBIN_DIRS_DOTDOT    = -pa ../deps/gen_cluster/ebin -pa ../deps/mochiweb/ebin
 WEB_DIR					= web/
 TEST_DIR				= test
 TEST_EBIN_DIR		= $(TEST_DIR)/ebin
-DEPS_DIR = deps
+DEPS_DIR 				= deps
 INCLUDE_DIR = include
 STOPLIGHT_DIR	= $(INCLUDE_DIR)/stoplight
-STOPLIGHT_VERSION = $(shell cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
+STOPLIGHT_VERSION = $(cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
 APP							= hermes
 RELFILE = $(EBIN)/hermes-$(VERSION).rel
 
