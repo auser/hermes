@@ -35,7 +35,6 @@ stoplight:
 	cd $(STOPLIGHT_DIR) && git pull origin master
 	cd $(STOPLIGHT_DIR) && rake
 
-	
 compile:
 	@$(ERL) -pa $(EBIN_DIRS) -pa $(EBIN) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'
 
@@ -45,7 +44,12 @@ edoc:
 
 eunit:
 	cd test/include/eunit && make
-	
+
+shell: compile
+	$(ERL) 	-sname shell -setcookie test \
+					-pa $(EBIN) \
+					-pa deps/*/ebin
+
 test: $(TEST_EBIN_DIR) compile
 	$(ERL) 	-sname testnode -setcookie test \
 					-noshell -pa $(EBIN) \

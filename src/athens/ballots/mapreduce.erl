@@ -2,33 +2,56 @@
 -include ("hermes.hrl").
 -export ([submit/2, submit/3]).
 
-submit(MFA, Value) ->
+submit(Fun, Value) ->
   Nodes = athens:nodes(),
-  submit(MFA, Value, Nodes).
+  submit(Fun, Value, Nodes).
   
-submit(MFA, Value, NodeList) ->
+submit(Fun, Args, NodeList) ->
   S = self(),  
   Acc = 0.0,
   Nodes = ensure_are_nodes(NodeList),
   ?TRACE("Nodes", Nodes),
-  Pid = spawn(fun() -> reduce(S, MFA, Value, Acc, Nodes) end),
+  % Pid = spawn(fun() -> 
+    reduce(S, Fun, Args, Acc, Nodes)
+  % end),
+  ,
   receive
-    {Pid, R} -> R
-  end.
+      {_Pid, R} -> R
+    end.
   
-reduce(From, MFA, Value, Acc, Nodes) ->
+reduce(From, Fun, ComparisonValue, Acc0, Nodes) ->
   process_flag(trap_exit, true),
   ReducePid = self(),
   
   lists:foreach(fun(Node) ->
-      spawn_link(fun() -> run_mfa(ReducePid, MFA, Node) end)
+      spawn_link(fun() -> run_fun(ReducePid, Fun, ComparisonValue) end)
     end, Nodes),
-  
+
   TotalNumNodes = length(Nodes),
-  NumResponses = 0,
-  ReducedAvg = collect_reductions(NumResponses, TotalNumNodes, Value, Acc),
-  From ! {self(), ReducedAvg}.
-  
+  % NumResponses = 0,
+  % Dict0 = dict:new(),
+  % {response, Arr} = collect_replies(TotalNumNodes, Args, Dict0),
+  % ReducedAvg = proplists:get_value(average, Arr),
+  % Tot = proplists:get_value(total_responses, Arr),
+  % ?TRACE("ReducedAvg from #", [ReducedAvg, Tot]),
+  % From ! {self(), ReducedAvg}.
+
+  %% make a dictionary to store the Keys 
+  Dict0 = dict:new(), 
+  %% Wait for N Map processes to terminate 
+  Dict1 = collect_replies(TotalNumNodes, Dict0),
+  ?TRACE("Got back from collect_replies", [TotalNumNodes, Acc0]),
+  Acc = dict:fold(fun(Node, Value, A) ->
+      ?TRACE("From Node V = ", [Node, Value]),
+      O = case Value of
+        ComparisonValue -> 1.0;
+        Else -> 0.0
+      end,
+      A + O
+    end, Acc0, Dict1),
+  ?TRACE("Acc", [Acc]),
+  TotalAverage = Acc / TotalNumNodes,
+  From ! {self(), TotalAverage}.
 
 %%====================================================================
 %% REDUCTION
@@ -43,30 +66,46 @@ reduce(From, MFA, Value, Acc, Nodes) ->
 %%    value.
 %%  If the response comes back differently than the value called 
 %%    with the election, then don't add it to the list of responses
-%%  If the known nodes send an exit response when calling the MFA
+%%  If the known nodes send an exit response when calling the Fun
 %%    then don't expect a response back from the node
 %%--------------------------------------------------------------------
-collect_reductions(TotalNumNodes, TotalNumNodes, _, Acc) -> (Acc / TotalNumNodes);
-collect_reductions(NumResponses, TotalNumNodes, Val, Acc) ->
-  ?TRACE("collect_reductions: ~p, ~p, ~p, ~p, ~p~n", [self(), NumResponses, TotalNumNodes, Val, Acc]),
+% collect_reductions(TotalNumNodes, TotalNumNodes, _, Acc) ->  (Acc / TotalNumNodes);
+%   
+% collect_reductions(NumResponses, TotalNumNodes, Val, Acc) ->
+%   ?TRACE("collect_reductions", [self, self(), num_responses, NumResponses, total_num_of_nodes, TotalNumNodes, val, Val, acc, Acc]),
+%   receive
+%     Val ->
+%       ?TRACE("Got back value", [Val, self()]),
+%       collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc + 1);
+%     {'EXIT', _, _}  ->
+%         ?TRACE("got EXIT", [A, B, self()]),
+%         collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc);
+%     Else  ->
+%       ?TRACE("Got back else", [Else]),
+%       collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc)
+%   end.
+
+collect_replies(0, Dict) -> Dict; 
+collect_replies(N, Dict) -> 
   receive
-    {_Node, Val}    -> 
-      ?TRACE("Got back value", [Val]),
-      collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc + 1);
-    {_Node, Else}  -> 
-      ?TRACE("Got back else", [Else]),
-      collect_reductions(NumResponses + 1, TotalNumNodes, Val, Acc);
-    {'EXIT', A, B}  -> 
-        ?TRACE("got EXIT", [A, B]),
-        collect_reductions(NumResponses, TotalNumNodes - 1, Val, Acc)
+    {Node, Val} -> 
+    ?TRACE("collect_replies", [N, Node, Val]),
+      case dict:is_key(Node, Dict) of 
+        true -> 
+          Dict1 = dict:append(Node, Val, Dict), 
+          collect_replies(N, Dict1); 
+        false -> 
+          Dict1 = dict:store(Node, Val, Dict), 
+          collect_replies(N, Dict1) 
+      end; 
+    {'EXIT', _, Why} ->
+      ?TRACE("EXIT", [Why]),
+      collect_replies(N-1, Dict) 
   end.
 
-run_mfa(From, MFA, Node) ->
-  [M,F,A] = MFA,
-  ?TRACE("running mfa", [self, self(), from, From, node, Node, mfa, MFA]),
-  Val = rpc:call(Node, M, F, A),
-  From ! {Node, Val}.
-
+run_fun(From, Fun, Args) ->    
+  Fun(Args, From).
+  
 % Avg = mon_server:get_latest_average_for(Monitor)
 % 
 % Out = ambassador:ask(Fun, Args)
