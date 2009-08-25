@@ -3,7 +3,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 setup() ->
-  ?TRACE("Setting up test~n", []),
   application:start(inets),
   http:set_options([{verbose, true}]),
   case rest_server:start_link([{port, 9999}]) of
