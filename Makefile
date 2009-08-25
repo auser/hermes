@@ -1,5 +1,5 @@
 LIBDIR					= `erl -eval 'io:format("~s~n", [code:lib_dir()])' -s init stop -noshell`
-VERSION					= $(cat VERSION | tr -d '\n')
+VERSION					= $(shell cat VERSION | tr -d '\n')
 CC							= erlc
 ERL							= erl
 EBIN						= ebin
@@ -13,7 +13,7 @@ TEST_EBIN_DIR		= $(TEST_DIR)/ebin
 DEPS_DIR 				= deps
 INCLUDE_DIR = include
 STOPLIGHT_DIR	= $(INCLUDE_DIR)/stoplight
-STOPLIGHT_VERSION = $(cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
+STOPLIGHT_VERSION = $(shell cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
 APP							= hermes
 RELFILE = $(EBIN)/hermes-$(VERSION).rel
 
@@ -34,7 +34,7 @@ thrift:
 	thrift --gen erl thrift/hermes.thrift
 	@(mv gen-erl/hermes*.hrl include)
 stoplight:
-	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(DEPS_DIR) && cd $(DEPS_DIR) && git clone git://github.com/jashmenn/stoplight.git)
+	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(INCLUDE_DIR) && cd $(INCLUDE_DIr) && git clone git://github.com/jashmenn/stoplight.git)
 	cd $(STOPLIGHT_DIR) && git pull origin master
 	cd $(STOPLIGHT_DIR) && rake
 cp_dep_beams:
