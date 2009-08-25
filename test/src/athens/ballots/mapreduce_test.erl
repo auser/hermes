@@ -5,17 +5,17 @@
 -export ([test_athens_response_function/1]).
 
 setup() ->
-  start_n_nodes(120).
+  test_helper:start_n_nodes(30).
 
 teardown(_Servers) ->
-  teardown_all_nodes(),
+  test_helper:teardown_all_nodes(),
   ok.
   
 all_test_() ->
   {setup, fun setup/0, fun teardown/1,
     {timeout, 300,
       fun() ->
-        NodeList = test_nodes(),
+        NodeList = test_helper:test_nodes(),
         % O = athens_srv:submit_ballot(whereis(node1), ?MODULE, test_athens_response_function, [1]),
         % O = mapreduce:submit(?MODULE, F, 1, test_nodes()),
         ?assertEqual(1/2, athens_srv:call_election(?MODULE, test_athens_response_function, [2], 2, NodeList))
@@ -45,27 +45,3 @@ test_athens_response_function([Num]) ->
 %%====================================================================
 %% PRIVATE
 %%====================================================================
-start_node(Integer, Seed) ->  
-  Name = construct_node_name(Integer),
-  athens_srv:start_named(Name, {seed, Seed}).
-
-construct_node_name(Integer) ->
-  erlang:list_to_atom(lists:flatten([
-                                      ["node"], [erlang:integer_to_list(Integer)]%, ["@local"]%, [Hostname]
-                                    ])).
-
-
-start_n_nodes(N) ->
-  {ok, OrigPid} = start_node(1, undefined),
-  O = lists:map(fun(Name) -> 
-    {ok, P} = start_node(Name, OrigPid),
-    {Name, P}
-  end, lists:seq(2, N) ),
-  lists:flatten([{node1, OrigPid},O]).
-
-teardown_all_nodes() ->
-  lists:map(fun(Pid) -> gen_cluster:cast(Pid, stop) end, test_nodes()).
-
-test_nodes() ->
-  {ok, N} = gen_cluster:call(node1, {'$gen_cluster', plist}),
-  N.

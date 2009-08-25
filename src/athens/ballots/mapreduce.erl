@@ -14,7 +14,7 @@ submit(M, F, A, Comparison, NodeList) ->
     reduce(S, M, F, A, Comparison, Acc, Nodes)
   end)
   ,receive
-    {_Pid, R} -> R
+    {Pid, R} -> R
   end.
   
 reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
@@ -30,12 +30,12 @@ reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
   % Collect the map reduce
   Dict1 = collect_reductions(TotalNumNodes, Dict0),
   % Reduce the values
-  Acc = dict:fold(fun(Node, Value, A) ->
+  Acc = dict:fold(fun(_Node, Value, FoldAcc) ->
       O = case Value of
         ComparisonValue -> 1.0;
         _Else -> 0.0
       end,
-      A + O
+      FoldAcc + O
     end, Acc0, Dict1),
   % Compute the average over the nodes
   TotalAverage = Acc / TotalNumNodes,
