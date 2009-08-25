@@ -8,17 +8,17 @@
                 cluster,commandInterface_thrift,config,erlrrd,erlrrd_app,erlrrd_sup,
                 hermes_logger,hermes_sup,home,loudmouth,make_boot,mapreduce,mon_server,
                 mon_server_sup,monitors,nag,nag_app,nag_sup,poolparty_types,protobuffs_ambassador,
-                rest_app,rest_server,rest_server_sup,target_system,testing,thrift_ambassador,utils,
+                rest_app,rest_server,rest_server_sup,testing,thrift_ambassador,utils,
 
                 % gen_cluster
-                gen_cluster
+                gen_cluster,
 
                 % mochiweb
-                % mochifmt,mochifmt_records,mochifmt_std,mochihex,mochijson,mochijson2,mochinum,
-                % mochiweb,mochiweb_app,mochiweb_charref,mochiweb_cookies,mochiweb_echo,
-                % mochiweb_headers,mochiweb_html,mochiweb_http,mochiweb_multipart,
-                % mochiweb_request,mochiweb_response,mochiweb_skel,mochiweb_socket_server,
-                % mochiweb_sup,mochiweb_util
+                mochifmt,mochifmt_records,mochifmt_std,mochihex,mochijson,mochijson2,mochinum,
+                mochiweb,mochiweb_app,mochiweb_charref,mochiweb_cookies,mochiweb_echo,
+                mochiweb_headers,mochiweb_html,mochiweb_http,mochiweb_multipart,
+                mochiweb_request,mochiweb_response,mochiweb_skel,mochiweb_socket_server,
+                mochiweb_sup,mochiweb_util
 
             ]},
         {env, [

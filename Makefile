@@ -5,16 +5,17 @@ ERL						= erl
 EBIN					= ebin
 CFLAGS					= +debug_info -W0 -I include -pa $(EBIN) -I gen-erl/
 COMPILE					= $(CC) $(CFLAGS) -o $(EBIN)
-EBIN_DIRS				= $(wildcard deps/*/ebin)
+EBIN_DIRS				= $(wildcard deps/*/ebin) $(wildcard include/*/ebin)
 DEP_EBIN_DIRS_DOTDOT    = -pa ../deps/gen_cluster/ebin -pa ../deps/mochiweb/ebin -pa ../deps/thrift/ebin -pz ../include/stoplight/ebin # todo, make dynamic
 WEB_DIR					= web/
 TEST_DIR				= test
 TEST_EBIN_DIR		= $(TEST_DIR)/ebin
 DEPS_DIR = deps
-INCLUDES_DIR = include
+INCLUDE_DIR = include
 STOPLIGHT_DIR	= $(INCLUDE_DIR)/stoplight
 STOPLIGHT_VERSION = $(shell cat $(STOPLIGHT_DIR)/VERSION | tr -d '\n')
 APP							= hermes
+RELFILE = $(EBIN)/hermes-$(VERSION).rel
 
 all: $(TEST_EBIN_DIR) ebin compile
 all_boot: all boot
@@ -22,7 +23,7 @@ wonderland_boot: wonderland all_boot
 start: all start_all
 rstakeout: wonderland compile
 
-deps: mochi thrift gen_cluster stoplight
+deps: mochi thrift gen_cluster stoplight cp_dep_beams
 
 mochi:
 	@(cd deps/mochiweb;$(MAKE))
@@ -36,6 +37,8 @@ stoplight:
 	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(DEPS_DIR) && cd $(DEPS_DIR) && git clone git://github.com/jashmenn/stoplight.git)
 	cd $(STOPLIGHT_DIR) && git pull origin master
 	cd $(STOPLIGHT_DIR) && rake
+cp_dep_beams:
+	cp $(DEPS_DIR)/*/ebin/*.beam $(EBIN)
 
 compile:
 	@$(ERL) -pa $(EBIN_DIRS) -pa $(EBIN) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'
@@ -69,7 +72,7 @@ release:
 
 # (cd $(EBIN); erl -pa ../$(EBIN) -pa ../$(EBIN_DIRS) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run target_system create "hermes-$(VERSION)" -s init stop)
 
-target_system:
+target_system: $(RELFILE)
 	escript scripts/target_system create "ebin/hermes-$(VERSION)"
 
 inspect_target_system:
@@ -83,10 +86,12 @@ $(EBIN):
 
 clean:
 	echo $(TEST_EBIN_DIR)
-	rm -rf $(EBIN)/*.beam $(EBIN)/erl_crash.dump erl_crash.dump $(EBIN)/*.boot $(EBIN)/*.rel $(EBIN)/*.script $(TEST_EBIN_DIR)/*.beam
+	rm -rf $(EBIN)/*.beam $(EBIN)/erl_crash.dump erl_crash.dump $(EBIN)/*.boot $(EBIN)/*.rel $(EBIN)/*.script $(TEST_EBIN_DIR)/*.beam $(EBIN)/hermes-*.tar.gz
 
 clean_mochiweb:
 	rm -rf deps/mochiweb/ebin/*.beam
 
 $(TEST_EBIN_DIR):
 	@mkdir $(TEST_EBIN_DIR)
+
+$(RELFILE): boot

@@ -1,5 +1,5 @@
 #!/usr/local/bin/escript
-%%! -pa ./ebin  -pa ./deps/gen_cluster/ebin -pa ./deps/mochiweb/ebin -pa ./deps/thrift/ebin -pz ./deps/stoplight/ebin -pa  /Users/nmurray/programming/erlang/sasl-2.1.5.4/ebin 
+%%! -pa ./ebin  -pa ./deps/gen_cluster/ebin -pa ./deps/mochiweb/ebin -pa ./deps/thrift/ebin -pz ./include/stoplight/ebin -pa  /Users/nmurray/programming/erlang/sasl-2.1.5.4/ebin 
 -include_lib("kernel/include/file.hrl").
 -export([main/1, create/1, install/2]).
 
@@ -59,14 +59,11 @@ create(RelFileName) ->
 
     io:fwrite("Making \"~s.script\" and \"~s.boot\" files ...~n", 
               [RelFileName, RelFileName]),
-          io:format("make_script~p~n", [[ok]]),
     make_script(RelFileName),
-          io:format("make_script2~p~n", [[ok]]),
 
     TarFileName = io_lib:fwrite("~s.tar.gz", [RelFileName]),
     io:fwrite("Creating tar file \"~s\" ...~n", [TarFileName]),
     make_tar(RelFileName),
-          io:format("make_script3~p~n", [[ok]]),
 
     io:fwrite("Creating directory \"tmp\" ...~n"),
     file:make_dir("tmp"), 
