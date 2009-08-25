@@ -58,6 +58,9 @@ test: $(TEST_EBIN_DIR) compile
 boot:
 	(cd $(EBIN); erl -pa ../$(EBIN) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
 
+release:
+	(cd $(EBIN); erl -pa ../$(EBIN) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_release_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
+
 start_all:
 	(cd $(EBIN); erl -pa $(EBIN) -noshell -sname hermes -boot hermes)
 

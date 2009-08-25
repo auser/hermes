@@ -9,7 +9,7 @@
           {cloud_name, undefined}
         ]},
         {registered, [hermes]},
-        {applications, [kernel, stdlib]},
+        {applications, [kernel, stdlib, sasl]},
         {included_applications, [stoplight]},
         {start_phases, [{go,[]}]},
         {mod, {application_starter,[hermes,[]]}}

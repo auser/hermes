@@ -8,9 +8,15 @@
 %%% cd ebin; erl -pa . -noshell -run make_boot write_scripts hermes "0.0.2" stoplight "0.0.1"
 %%%
 -module(make_boot).
--export([write_scripts/1]).
+-export([write_scripts/1, write_release_scripts/1]).
 
-write_scripts(A) -> 
+write_scripts(A) ->
+    write_scripts(A, local).
+
+write_release_scripts(A) ->
+    write_scripts(A, release).
+
+write_scripts(A, Dest) -> 
   Args = pair_up(A),
   [Primary|Others] = Args,
   {Name, Version} = Primary,
@@ -34,16 +40,22 @@ write_scripts(A) ->
               AccIn ++ io_lib:format(", {~p, ~p}", [list_to_atom(N1), V1])
       end, "", Others),
 
-  Lowername = string:to_lower(Name),
+  Lowername        = string:to_lower(Name),
+  LowernameVersion = string:to_lower(Name ++ "-" ++ Version),
 
-  Filename = lists:flatten(Lowername ++ ".rel"),
+  Filename = lists:flatten(LowernameVersion ++ ".rel"),
   io:format("Writing to ~p (as ~s)~n", [Filename, Lowername]),
   {ok, Fs} = file:open(Filename, [write]),
 
   io:format(Fs, Rel, [Name, Version, Erts, Kernel, Stdlib, Sasl, Lowername, Version, OtherApps]),
   file:close(Fs),
 
-  systools:make_script(Lowername, [local]),
+  case Dest of
+      local   ->  systools:make_script(LowernameVersion, [local]);
+      release -> 
+          systools:make_script(LowernameVersion),
+          systools:make_tar(LowernameVersion)
+  end,
   halt().
 
 pair_up([A, B | Tail]) ->
