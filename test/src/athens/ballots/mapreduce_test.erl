@@ -2,14 +2,14 @@
 -include ("hermes.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--export ([test_athens_response_function/2]).
+-export ([test_athens_response_function/1]).
 
 setup() ->
   % ttb:tracer(node(), [{file,"trace/ttb"},{process_info,true}]),
   % ttb:tracer(node(), [{file,"trace/ttb"},{process_info,true}]),
   % ttb:p(self(), [call,send,messages,sos,sol]),
   % mon_method([?MODULE, handle_map, []]),
-  start_n_nodes(3).
+  start_n_nodes(30).
 
 teardown(Servers) ->
   lists:map(fun({_Name, Pid}) ->
@@ -24,23 +24,33 @@ all_test_() ->
     {timeout, 300,
       fun() ->
         NodeList = test_nodes(),
-        ?TRACE("NodeList", [NodeList]),
-        O = athens_srv:call_election(athens_srv, blah, 1, NodeList),
+        % O = athens_srv:submit_ballot(whereis(node1), ?MODULE, test_athens_response_function, [1]),
+        O = athens_srv:call_election(?MODULE, test_athens_response_function, [2], NodeList),
         % O = mapreduce:submit(?MODULE, F, 1, test_nodes()),
-        ?TRACE("Ran tests: ~p~n", [O])
+        ?TRACE("Ran tests: ~p~n", [O]),
+        ?assertEqual(0.5, O)
       end
     }
   }.
 
 
-test_athens_response_function(Num, FromPid) ->
-  ?TRACE("in test_athens_response_function", []),
-  FromPid ! {self(), Num}.
+test_athens_response_function([Num]) ->
+  ProcInfo = erlang:process_info(self()),
+  Regname = erlang:atom_to_list(proplists:get_value(registered_name, ProcInfo)),
+  [Nodenum] = string:tokens(Regname, "node"),
+  
+  PortNum = erlang:list_to_integer(Nodenum),
+  % ?TRACE("in test_athens_response_function", [ Num, Regname, Nodenum, PortNum, PortNum rem Num ]),
+  
+  case PortNum rem Num of
+    0 -> Num;
+    _ -> 0
+  end.
     
 %%====================================================================
 %% PRIVATE
 %%====================================================================
-start_node(Integer, Seed) ->
+start_node(Integer, Seed) ->  
   Name = construct_node_name(Integer),
   athens_srv:start_named(Name, {seed, Seed}).
 

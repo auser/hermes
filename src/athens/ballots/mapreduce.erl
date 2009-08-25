@@ -10,22 +10,22 @@ submit(M, F, A, NodeList) ->
   S = self(),
   Acc = 0.0,
   Nodes = ensure_are_nodes(NodeList),
-  Pid = spawn(fun() -> 
+  % Pid = spawn(fun() -> 
     reduce(S, M, F, A, Acc, Nodes)
-  end)
-  ,
-  receive
+  % end)
+  ,receive
     {_Pid, R} -> R
   end.
   
-reduce(From, M, F, ComparisonValue, Acc0, Nodes) ->
+reduce(From, M, F, A, Acc0, Nodes) ->
   process_flag(trap_exit, true),
   ReducePid = self(),
   
   lists:foreach(fun(Node) ->
-      spawn_link(Node, fun() -> run_fun(ReducePid, [M,F, [ComparisonValue]]) end)
+      spawn_link(fun() -> run_fun(ReducePid, [M,F, [A]], Node) end)
     end, Nodes),
-
+    
+  [ComparisonValue] = A,
   TotalNumNodes = length(Nodes),
   Dict0 = dict:new(),
   % Collect the map reduce
@@ -33,7 +33,6 @@ reduce(From, M, F, ComparisonValue, Acc0, Nodes) ->
   ?TRACE("Got back from collect_reductions", [TotalNumNodes, Acc0]),
   % Reduce the values
   Acc = dict:fold(fun(Node, Value, A) ->
-      ?TRACE("From Node V = ", [Node, Value]),
       O = case Value of
         ComparisonValue -> 1.0;
         _Else -> 0.0
@@ -64,7 +63,6 @@ collect_reductions(0, Dict) -> Dict;
 collect_reductions(N, Dict) -> 
   receive
     {Node, Val} -> 
-    ?TRACE("collect_reductions", [N, Node, Val]),
       case dict:is_key(Node, Dict) of 
         true -> 
           Dict1 = dict:append(Node, Val, Dict), 
@@ -73,16 +71,15 @@ collect_reductions(N, Dict) ->
           Dict1 = dict:store(Node, Val, Dict), 
           collect_reductions(N, Dict1) 
       end; 
-    {'EXIT', _, Why} ->
-      ?TRACE("EXIT", [Why]),
+    {'EXIT', _, _Why} ->
       collect_reductions(N-1, Dict) 
   end.
 
 run_fun(From, MFA, Node) ->
   [M,F,A] = MFA,
-  ?TRACE("Running ", [M,F,A]),
-  {ok, Output} = rpc:call(Node,M,F,A),
-  From ! Output.
+  Output = gen_server:call(Node, {ballot, M, F, A}),
+  % {ok, Output} = rpc:call(Node,M,F,A),
+  From ! {self(), Output}.
   
 % Avg = mon_server:get_latest_average_for(Monitor)
 % 
