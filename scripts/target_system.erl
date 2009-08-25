@@ -4,14 +4,7 @@
 -export([main/1, create/1, install/2]).
 
 main([Action|Rest]) ->
-%    try
-        do_main(list_to_atom(Action), Rest)
-%    catch
-%        _:X ->
-%            io:format("Exception: ~p~n", [X]),
-%            usage()
-%    end;
-    ;
+    do_main(list_to_atom(Action), Rest);
 main(_) ->
     usage().
 
@@ -21,9 +14,13 @@ do_main(create, RelName) ->
     create(RelName).
 
 usage() ->
-    io:format("USAGE: target_system.erl action [files]\n"
-              "examples:\n"
-              "target_system.erl create release-vsn\n"
+    io:format("USAGE: target_system action [files]\n"
+              "Actions:\n"
+              "target_system create release-vsn\n"
+              "target_system install releasefile installdir\n\n"
+              "Examples:\n"
+              "target_system create hermes-0.0.1\n"
+              "target_system install hermes-0.0.1 /usr/local/erl-target\n"
     ),
     halt(1).
 
