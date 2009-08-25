@@ -40,7 +40,7 @@ stoplight:
 cp_dep_beams:
 	cp $(DEPS_DIR)/*/ebin/*.beam $(EBIN)
 
-compile:
+compile: deps
 	@$(ERL) -pa $(EBIN_DIRS) -pa $(EBIN) -noinput +B -eval 'case make:all() of up_to_date -> halt(0); error -> halt(1) end.'
 
 edoc:
@@ -64,7 +64,7 @@ test: $(TEST_EBIN_DIR) compile
 					-s test_suite test \
 					-s init stop
 	
-boot:
+boot: compile
 	(cd $(EBIN); erl -pa ../$(EBIN) $(DEP_EBIN_DIRS_DOTDOT) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
 
 release:
