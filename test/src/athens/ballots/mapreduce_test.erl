@@ -11,10 +11,11 @@ setup() ->
   % mon_method([?MODULE, handle_map, []]),
   start_n_nodes(30).
 
-teardown(Servers) ->
-  lists:map(fun({_Name, Pid}) ->
-      gen_cluster:cast(Pid, stop)
-   end, Servers),
+teardown(_Servers) ->
+  % lists:map(fun({_Name, Pid}) ->
+  %     gen_cluster:cast(Pid, stop)
+  %  end, Servers),
+  teardown_all_nodes(),
    % ttb:stop(),
    % ttb:format("trace"),
   ok.
@@ -25,10 +26,13 @@ all_test_() ->
       fun() ->
         NodeList = test_nodes(),
         % O = athens_srv:submit_ballot(whereis(node1), ?MODULE, test_athens_response_function, [1]),
-        O = athens_srv:call_election(?MODULE, test_athens_response_function, [2], NodeList),
         % O = mapreduce:submit(?MODULE, F, 1, test_nodes()),
-        ?TRACE("Ran tests: ~p~n", [O]),
-        ?assertEqual(0.5, O)
+        ?assertEqual(1/2, athens_srv:call_election(?MODULE, test_athens_response_function, [2], NodeList)),
+        ?assertEqual(1/3, athens_srv:call_election(?MODULE, test_athens_response_function, [2], [node1, node2, node3])),
+        ?assertEqual(1.0, athens_srv:call_election(?MODULE, test_athens_response_function, [2], [node2, node4, node6])),
+        ?assertEqual(1/4, athens_srv:call_election(?MODULE, test_athens_response_function, [2], [node1, node3, node5, node8])),
+        ?assertEqual(0.0, athens_srv:call_election(?MODULE, test_athens_response_function, [4], [node1, node3, node5])),
+        ?assertEqual(1/30,athens_srv:call_election(?MODULE, test_athens_response_function, [30], NodeList))
       end
     }
   }.
@@ -67,6 +71,9 @@ start_n_nodes(N) ->
     {Name, P}
   end, lists:seq(2, N) ),
   lists:flatten([{node1, OrigPid},O]).
+
+teardown_all_nodes() ->
+  lists:map(fun(Pid) -> gen_cluster:cast(Pid, stop) end, test_nodes()).
 
 test_nodes() ->
   {ok, N} = gen_cluster:call(node1, {'$gen_cluster', plist}),

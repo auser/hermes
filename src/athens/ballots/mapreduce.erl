@@ -30,7 +30,6 @@ reduce(From, M, F, A, Acc0, Nodes) ->
   Dict0 = dict:new(),
   % Collect the map reduce
   Dict1 = collect_reductions(TotalNumNodes, Dict0),
-  ?TRACE("Got back from collect_reductions", [TotalNumNodes, Acc0]),
   % Reduce the values
   Acc = dict:fold(fun(Node, Value, A) ->
       O = case Value of
