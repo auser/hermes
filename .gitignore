@@ -13,3 +13,4 @@ ebin/*.script
 web/
 *.rrd
 deps/stoplight
+ebin/hermes-*.tar.gz

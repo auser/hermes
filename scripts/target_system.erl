@@ -37,7 +37,7 @@ create(RelFileName) ->
     io:fwrite("Reading file: \"~s\" ...~n", [RelFile]),
     {ok, [RelSpec]} = file:consult(RelFile),
     io:fwrite("Creating file: \"~s\" from \"~s\" ...~n", 
-              ["plain.rel", RelFile]),
+              ["ebin/plain.rel", RelFile]),
     {release,
      {RelName, RelVsn},
      {erts, ErtsVsn},
@@ -53,12 +53,12 @@ create(RelFileName) ->
                                          false
                                  end, AppVsns)
                    },
-    {ok, Fd} = file:open("plain.rel", [write]),
+    {ok, Fd} = file:open("ebin/plain.rel", [write]),
     io:fwrite(Fd, "~p.~n", [PlainRelSpec]),
     file:close(Fd),
 
-    io:fwrite("Making \"plain.script\" and \"plain.boot\" files ...~n"),
-    make_script("plain"),
+    io:fwrite("Making \"ebin/plain.script\" and \"ebin/plain.boot\" files ...~n"),
+    make_script("ebin/plain"),
 
     io:fwrite("Making \"~s.script\" and \"~s.boot\" files ...~n", 
               [RelFileName, RelFileName]),
@@ -84,9 +84,9 @@ create(RelFileName) ->
     io:fwrite("Creating temporary directory \"~s\" ...~n", [TmpBinDir]),
     file:make_dir(TmpBinDir),
 
-    io:fwrite("Copying file \"plain.boot\" to \"~s\" ...~n", 
+    io:fwrite("Copying file \"ebin/plain.boot\" to \"~s\" ...~n", 
               [filename:join([TmpBinDir, "start.boot"])]),
-    copy_file("plain.boot", filename:join([TmpBinDir, "start.boot"])),
+    copy_file("ebin/plain.boot", filename:join([TmpBinDir, "start.boot"])),
 
     io:fwrite("Copying files \"epmd\", \"run_erl\" and \"to_erl\" from \n"
               "\"~s\" to \"~s\" ...~n", 
