@@ -12,7 +12,10 @@
 %% API
 -export([start/0, start_link/1, start_named/2]).
 
--export ([call_election/2]).
+-export ([  call_election/2,
+            call_election/3,
+            call_election/4
+         ]).
 
 -export ([  nodes/0,
             nodes/1
@@ -56,6 +59,13 @@ start_named(Name, Config) ->
 call_election(Name, Value) ->  
   MFA = [ambassador, ask, ["run_monitor", [mon_server, get_latest_average_for, [Name]]]],
   ?BALLOT:submit(MFA, Value).
+
+call_election(M, F, A) ->
+  N = ?MODULE:nodes(),
+  ?BALLOT:submit(M, F, A, N).
+  
+call_election(M, F, A, Nodes) ->
+  ?BALLOT:submit(M, F, A, Nodes).
 
 nodes() ->
   ?MODULE:nodes(?SERVER).
