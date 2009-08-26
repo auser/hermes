@@ -69,6 +69,9 @@ boot: compile
 release:
 	(cd $(EBIN); erl -pa ../$(EBIN) $(DEP_EBIN_DIRS_DOTDOT) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run make_boot write_release_scripts hermes $(VERSION) stoplight $(STOPLIGHT_VERSION))
 
+#relup:
+#	(cd $(EBIN); erl -pa ../$(EBIN) $(DEP_EBIN_DIRS_DOTDOT) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run systools make_relup "hermes-0.0.2", ["hermes-0.0.1"], ["hermes-0.0.1"])
+
 # (cd $(EBIN); erl -pa ../$(EBIN) -pa ../$(EBIN_DIRS) -pz ../$(STOPLIGHT_DIR)/ebin -noshell -run target_system create "hermes-$(VERSION)" -s init stop)
 
 target_system: $(RELFILE)
