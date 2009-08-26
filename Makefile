@@ -94,3 +94,8 @@ $(TEST_EBIN_DIR):
 	@mkdir $(TEST_EBIN_DIR)
 
 $(RELFILE): boot
+
+# tmp, testing for nate
+nates_delivery:
+	scp scripts/target_system vm:~/hermes
+	scp ebin/hermes-0.0.1.tar.gz vm:~/hermes 
