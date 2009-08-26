@@ -1,4 +1,4 @@
-#!/usr/local/bin/escript
+#!/usr/bin/env escript
 %%! -pa ./ebin  -pa ./deps/gen_cluster/ebin -pa ./deps/mochiweb/ebin -pa ./deps/thrift/ebin -pz ./include/stoplight/ebin -pa  /Users/nmurray/programming/erlang/sasl-2.1.5.4/ebin 
 -include_lib("kernel/include/file.hrl").
 -export([main/1, create/1, install/2]).
@@ -128,7 +128,8 @@ install(RelFileName, RootDir) ->
     io:fwrite("Substituting in erl.src, start.src and start_erl.src to\n"
               "form erl, start and start_erl ...\n"),
     subst_src_scripts(["erl", "start", "start_erl"], ErtsBinDir, BinDir, 
-                      [{"FINAL_ROOTDIR", RootDir}, {"EMU", "beam"}],
+                      % [{"FINAL_ROOTDIR", RootDir}, {"EMU", "beam"}],
+                      [{"FINAL_ROOTDIR", code:root_dir()}, {"EMU", "beam"}],
                       [preserve]),
     io:fwrite("Creating the RELEASES file ...\n"),
     create_RELEASES(RootDir, 

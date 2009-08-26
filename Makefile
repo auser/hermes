@@ -34,7 +34,7 @@ thrift:
 	thrift --gen erl thrift/hermes.thrift
 	@(mv gen-erl/hermes*.hrl include)
 stoplight:
-	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(INCLUDE_DIR) && cd $(INCLUDE_DIr) && git clone git://github.com/jashmenn/stoplight.git)
+	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(INCLUDE_DIR) && cd $(INCLUDE_DIR) && git clone git://github.com/jashmenn/stoplight.git)
 	cd $(STOPLIGHT_DIR) && git pull origin master
 	cd $(STOPLIGHT_DIR) && rake
 cp_dep_beams:
