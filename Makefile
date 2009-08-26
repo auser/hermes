@@ -102,3 +102,5 @@ $(RELFILE): boot
 nates_delivery:
 	scp scripts/target_system vm:~/hermes
 	scp ebin/hermes-0.0.1.tar.gz vm:~/hermes 
+	# remotely:
+	# rm -rf /usr/local/hermes && ./target_system install hermes-0.0.1 /usr/local/hermes
