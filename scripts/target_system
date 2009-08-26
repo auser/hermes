@@ -73,6 +73,7 @@ create(RelFileName) ->
 
     TmpBinDir = filename:join(["tmp", "bin"]),
     ErtsBinDir = filename:join(["tmp", "erts-" ++ ErtsVsn, "bin"]),
+    TemplatesDir = filename:join(["templates"]),
     io:fwrite("Deleting \"erl\" and \"start\" in directory \"~s\" ...~n", 
               [ErtsBinDir]),
     file:delete(filename:join([ErtsBinDir, "erl"])),
@@ -94,6 +95,8 @@ create(RelFileName) ->
               filename:join([TmpBinDir, "run_erl"]), [preserve]),
     copy_file(filename:join([ErtsBinDir, "to_erl"]), 
               filename:join([TmpBinDir, "to_erl"]), [preserve]),
+    copy_file(filename:join([TemplatesDir, "erts", "bin", "erl.src"]), 
+              filename:join([ErtsBinDir, "erl.src"]), [preserve]),
 
     StartErlDataFile = filename:join(["tmp", "releases", "start_erl.data"]),
     io:fwrite("Creating \"~s\" ...~n", [StartErlDataFile]),
@@ -112,7 +115,7 @@ create(RelFileName) ->
     erl_tar:close(Tar),
     file:set_cwd(Cwd),
     io:fwrite("Removing directory \"tmp\" ...~n"),
-    remove_dir_tree("tmp"),
+    % remove_dir_tree("tmp"),
     ok.
 
 
@@ -128,8 +131,7 @@ install(RelFileName, RootDir) ->
     io:fwrite("Substituting in erl.src, start.src and start_erl.src to\n"
               "form erl, start and start_erl ...\n"),
     subst_src_scripts(["erl", "start", "start_erl"], ErtsBinDir, BinDir, 
-                      % [{"FINAL_ROOTDIR", RootDir}, {"EMU", "beam"}],
-                      [{"FINAL_ROOTDIR", code:root_dir()}, {"EMU", "beam"}],
+                      [{"FINAL_ROOTDIR", RootDir},{"FINAL_BINDIR", code:root_dir()}, {"EMU", "beam"}],
                       [preserve]),
     io:fwrite("Creating the RELEASES file ...\n"),
     create_RELEASES(RootDir, 
