@@ -10,7 +10,7 @@
 read() ->
   case read_1(?CONFIG_FILE) of
     {ok, C} -> {ok, C};
-    {error, enoent} -> {error};
+    {error, enoent} -> [{}];
     Err -> Err
   end.
  
