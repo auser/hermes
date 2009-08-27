@@ -22,6 +22,15 @@ end).
   false -> "/var/hermes"
 end).
 
+-define (DEFAULT_CONFIG, [
+          {port, 8642},
+          {module, hermes},
+          {proto_port, 11223},
+          {log_path, "logs/hermes.log"},
+          {cloud_name, "monitored_app"},
+          {clouds_config, "/etc/poolparty/clouds.rb"}
+        ]). 
+
 -define (LOG_MESSAGE (Message), hermes_logger:append({erlang:localtime(), ?MODULE, ?LINE, Message})).
 -define(TRACE(X, M),  io:format(user, "TRACE ~p:~p ~p ~p~n", [?MODULE, ?LINE, X, M])).
 -define (DEBUG_LOG (Bool, Message, Opts), 
