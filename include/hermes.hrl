@@ -27,7 +27,7 @@ end).
           {module, hermes},
           {proto_port, 11223},
           {log_path, "logs/hermes.log"},
-          {cloud_name, "monitored_app"},
+          {cloud_name, "/etc/poolparty/cloud_name"},
           {clouds_config, "/etc/poolparty/clouds.rb"}
         ]). 
 
