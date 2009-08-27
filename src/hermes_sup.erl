@@ -16,7 +16,7 @@ init([Type, Args]) ->
   RrdServerSup    = { erlrrd_sup,     {erlrrd_sup, start_link, []}, permanent, 2000, worker, []},  
   MonServerSup    = { mon_server_sup, {mon_server_sup, start_link, [Args]}, permanent, 2000, worker, []},  
   RestServerSup   = { rest_server,    {rest_app, start, [Type, Args]}, permanent,2000,worker,[]},
-  % AmbassadorApp   = { ambassador_app, {ambassador_app, start, [Type, Args]}, permanent, 2000, worker, []},
+  AmbassadorApp   = { ambassador_app, {ambassador_app, start, [Type, Args]}, permanent, 2000, worker, []},
   NagApp          = { nag_app,        {nag_app, start, [Type, Args]}, permanent, 2000, worker, []},
 
   application:start(stoplight),
@@ -26,7 +26,7 @@ init([Type, Args]) ->
     RestServerSup,
     RrdServerSup,
     MonServerSup,
-    % AmbassadorApp,
+    AmbassadorApp,
     NagApp
   ]}}.
   
