@@ -23,16 +23,16 @@ wonderland_boot: wonderland all_boot
 start: all start_all
 rstakeout: wonderland compile
 
-deps: mochi thrift gen_cluster stoplight cp_dep_beams
+deps: mochi build_thrift gen_cluster stoplight cp_dep_beams
 
 mochi:
-	@(cd deps/mochiweb;$(MAKE))
+	(cd deps/mochiweb;$(MAKE))
 gen_cluster:
-	@(cd deps/gen_cluster;$(MAKE))
-thrift:
-	@(cd deps/thrift;$(MAKE))
+	(cd deps/gen_cluster;$(MAKE))
+build_thrift:
+	(cd deps/thrift;$(MAKE))
 	thrift --gen erl thrift/hermes.thrift
-	@(mv gen-erl/hermes*.hrl include)
+	(mv gen-erl/hermes*.hrl include)
 stoplight:
 	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(INCLUDE_DIR) && cd $(INCLUDE_DIR) && git clone git://github.com/jashmenn/stoplight.git)
 	cd $(STOPLIGHT_DIR) && git pull origin master
