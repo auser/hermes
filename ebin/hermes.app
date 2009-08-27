@@ -18,7 +18,14 @@
                 mochiweb,mochiweb_app,mochiweb_charref,mochiweb_cookies,mochiweb_echo,
                 mochiweb_headers,mochiweb_html,mochiweb_http,mochiweb_multipart,
                 mochiweb_request,mochiweb_response,mochiweb_skel,mochiweb_socket_server,
-                mochiweb_sup,mochiweb_util
+                mochiweb_sup,mochiweb_util,
+
+                % thrift
+                thrift_app,thrift_base64_transport,thrift_binary_protocol,
+                thrift_buffered_transport,thrift_client,thrift_disk_log_transport,
+                thrift_file_transport,thrift_framed_transport,thrift_http_transport,
+                thrift_processor,thrift_protocol,thrift_server,thrift_service,
+                thrift_socket_server,thrift_socket_transport,thrift_sup,thrift_transport
 
             ]},
         {env, [
