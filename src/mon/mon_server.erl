@@ -17,7 +17,8 @@
             get_average/1, 
             get_average_over/2,
             get_latest_average_for/1,
-            list_monitors/0
+            list_monitors/0,
+            get_monitors/0
          ]).
 % Aggregates
 -export ([get_all_averages/0, get_all_averages/1, get_all_averages/2,
@@ -269,6 +270,7 @@ collect_rrd_values(Str) ->
 %% behest of the user on the command-line
 %%--------------------------------------------------------------------
 get_monitors() ->
+  ?TRACE("", file:list_dir(?RRD_DIRECTORY)),
   case file:list_dir(?RRD_DIRECTORY) of
     {error, Reason} -> 
       Reason;

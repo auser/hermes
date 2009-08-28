@@ -108,18 +108,31 @@ clean_regexp_brackets(String) ->
 %%--------------------------------------------------------------------
 create_fixture_rrds() ->
   Fixtures = [cpu, memory, disk],
+  SubTypes = [idle, free, used],  
+  
   {Mega, Secs, _} = now(),
   StartTime = Mega*1000000 + Secs,
+  
+  % Create the directories
+  lists:map(
+    fun(Module) ->
+      file:make_dir(lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ]))
+  end, Fixtures),
   
   % Create the rrds
   lists:map(
     fun(Module) ->
-      Ras = lists:append([" --start ", erlang:integer_to_list(StartTime), 
-                          " DS:", erlang:atom_to_list(Module), ":GAUGE:600:0:1250000 RRA:AVERAGE:0.5:1:24 RRA:LAST:0.5:6:10"
-                          ]),
-                          
-      Meth = lists:append([?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", Ras]),
-      erlrrd:create(Meth)
+      lists:map(fun(SubType) ->
+          Ras = lists:append([" --start ", erlang:integer_to_list(StartTime), 
+                              " DS:", erlang:atom_to_list(Module), ":GAUGE:600:0:1250000 RRA:AVERAGE:0.5:1:24 RRA:LAST:0.5:6:10"
+                              ]),
+
+          Basedir = lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ]),
+          Meth = lists:append([ Basedir,
+                                erlang:atom_to_list(Module), "-", erlang:atom_to_list(SubType), ".", "rrd", 
+                                Ras]),
+          erlrrd:create(Meth)
+        end, SubTypes)
     end, Fixtures),
   % Update the rrds with some fake data
   lists:map(
@@ -132,11 +145,16 @@ create_fixture_rrds() ->
       % Update with the list of values
       lists:zipwith(
         fun(Value, Count) ->
-          M = lists:append([
-            ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", % File test/fixtures/fixture.rrd
-            " ", % Space
-            erlang:integer_to_list(StartTime + 600*Count), ":", Value % Value -> Time:Value
-          ]),
-          erlrrd:update(M)
+          BDir = lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ]),
+          
+          lists:map(fun(SubType) ->
+          
+            M = lists:append([
+              BDir, erlang:atom_to_list(Module), "-", erlang:atom_to_list(SubType), ".", "rrd", % File test/fixtures/fixture.rrd
+              " ", % Space
+              erlang:integer_to_list(StartTime + 600*Count), ":", Value % Value -> Time:Value
+            ]),
+            erlrrd:update(M)
+          end, SubTypes)
         end, Values, lists:seq(1, erlang:length(Values)))
     end, Fixtures).
