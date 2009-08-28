@@ -32,7 +32,10 @@ gen_cluster:
 build_thrift:
 	(cd deps/thrift;$(MAKE))
 	thrift --gen erl thrift/hermes.thrift
-	(mv gen-erl/hermes*.hrl include)
+	mv gen-erl/hermes*.hrl include
+	mv gen-erl/hermes*.erl src/ambassador/ambassadors/thrift
+	rmdir gen-erl
+
 stoplight:
 	[ -d $(STOPLIGHT_DIR) ] || (mkdir -p $(INCLUDE_DIR) && cd $(INCLUDE_DIR) && git clone git://github.com/jashmenn/stoplight.git)
 	cd $(STOPLIGHT_DIR) && git pull origin master

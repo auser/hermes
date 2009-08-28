@@ -25,7 +25,10 @@
                 thrift_buffered_transport,thrift_client,thrift_disk_log_transport,
                 thrift_file_transport,thrift_framed_transport,thrift_http_transport,
                 thrift_processor,thrift_protocol,thrift_server,thrift_service,
-                thrift_socket_server,thrift_socket_transport,thrift_sup,thrift_transport
+                thrift_socket_server,thrift_socket_transport,thrift_sup,thrift_transport,
+
+                % hermes thrift
+                hermes_thrift, hermes_types
 
             ]},
         {env, [
