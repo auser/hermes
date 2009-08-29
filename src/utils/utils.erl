@@ -32,6 +32,7 @@ turn_binary(Arg) when is_binary(Arg) -> Arg;
 turn_binary(Arg) when is_boolean(Arg) -> erlang:list_to_binary(erlang:atom_to_list(Arg));
 turn_binary(Arg) when is_tuple(Arg) -> erlang:term_to_binary(Arg);
 turn_binary(Arg) when is_integer(Arg) -> erlang:list_to_binary(erlang:integer_to_list(Arg));
+turn_binary(Arg) when is_float(Arg) -> erlang:list_to_binary(erlang:float_to_list(Arg));
 turn_binary(Arg) -> erlang:list_to_binary(Arg).
 
 turn_to_atom(Arg) when is_atom(Arg) -> Arg;

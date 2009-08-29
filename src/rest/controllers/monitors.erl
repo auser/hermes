@@ -9,13 +9,22 @@ get([]) ->
       case Monitor of
         unknown_monitor -> unknown_monitor;
         _Else ->
-          Vals = handle_get_monitor_over_time(erlang:atom_to_list(Monitor), 600),
-          {struct, [{Monitor, Vals}]}
+          O = handle_get_monitor_over_time(Monitor, 600),
+          ?TRACE("O (in get)", O),
+          O
       end
     end,
     Monitors),
   % ?INFO("MonitorData: ~p~n", [MonitorData]),
-  {"monitors", MonitorData };
+  {?MODULE, {struct, MonitorData}};
+
+get(["list"]) ->
+  Monitors = mon_server:list_monitors(),
+  JsonMonitors = lists:map(fun({Mon, Types}) ->
+      {Mon, lists:map(fun(T) -> list_to_binary(T) end, Types)}
+    end, Monitors),
+    
+  {?MODULE, {struct, JsonMonitors}};
 
 get([Monitor]) ->
   Vals = handle_get_monitor_over_time(Monitor, 600),
@@ -37,12 +46,16 @@ delete(_Path, _Data) -> {"error", <<"unhandled">>}.
 %% Private methods
 %%====================================================================
 change_to_float("nan")  -> 0;
-change_to_float(Int)      -> erlang:float_to_list(Int).
+change_to_float([])     -> 0.0;
+change_to_float(Int)    -> Int.
 
-handle_get_monitor_over_time(Monitor, Time) ->
-  {_ModAtom, Vals} = mon_server:get_average_over(erlang:list_to_atom(Monitor), Time),
+handle_get_monitor_over_time(MonitorAtom, Time) ->  
+  Vals = mon_server:get_average_over(MonitorAtom, Time),
   PrintableVals = lists:map(fun(V) ->
-      {A, Int} = V,
-      {struct, [{A, utils:turn_binary(change_to_float(Int))}]}
+      {A, ListOfAtoms} = V,
+      O = lists:map(fun({T, B}) -> 
+          {T, utils:turn_binary(change_to_float(B))}
+        end, ListOfAtoms),
+      {erlang:list_to_atom(A), {struct, O}}
     end, Vals),
   PrintableVals.

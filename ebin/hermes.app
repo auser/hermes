@@ -35,7 +35,9 @@
           {port, 8642},
           {monitors, [cpu, memory]},
           {clouds_config, undefined},
-          {cloud_name, undefined}
+          {cloud_name, undefined},
+          {no_nag, false},
+          {no_ambassador, false}
         ]},
 
         {registered, [hermes]},

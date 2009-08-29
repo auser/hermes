@@ -128,6 +128,7 @@ handle_call({list_monitors}, _From, State) ->
   {reply, Mons, State};
 
 handle_call({get_average, Module, Seconds}, _From, State) ->
+  ?TRACE("Handling call for get_average", Module),
   Fetched = handle_get_average(Module, Seconds),
   {reply, Fetched, State};
 handle_call({get_average, Module}, _From, State) ->
@@ -218,25 +219,31 @@ handle_leave(LeavingPid, Pidlist, Info, State) ->
 %% Description: Handle the fetching of averages for rrd
 %%              over the last Seconds
 %%--------------------------------------------------------------------
-handle_get_average(Module, Last) ->
-  KnownMonitors = get_monitors(),
+handle_get_average({SuperMon, SubMonitors}, OverTime) ->
+  ?TRACE("----- Handle get average for", [SuperMon, SubMonitors]),
+  lists:map(fun(SubMon) -> {SubMon, handle_get_average(SubMon, OverTime)} end, SubMonitors);
   
-  case lists:member(Module, KnownMonitors) of
+handle_get_average(Module, OverTime) ->
+  ?TRACE("==== handle_get_average", [Module, OverTime]),  
+  
+  case is_known_monitor(Module) of
     false -> {unknown_monitor, []};
     true ->
       {Mega, Secs, _} = now(),
-      StartTime = Mega*1000000 + Secs - Last,
+      StartTime = Mega*1000000 + Secs - OverTime,
 
       % Method
       M = lists:append([
-        ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), ".", "rrd", % File Module.rrd
+        get_monitor_subtype_file(Module), % File Module.rrd
         " AVERAGE ",
         " --start ", erlang:integer_to_list(StartTime),
-        " --end ", erlang:integer_to_list(StartTime + Last)
+        " --end ", erlang:integer_to_list(StartTime + OverTime)
       ]),
       
       {ok, Fetched} = erlrrd:fetch(M),
-      parse_rrd_return(Fetched)
+      O = parse_rrd_return(Fetched),
+      ?TRACE("parsed rrd", [O]),
+      O
   end.
 
 %%--------------------------------------------------------------------
@@ -246,14 +253,13 @@ handle_get_average(Module, Last) ->
 %  [[]],
 %  ["1249284300: 5.0000000000e-01"]]
 %%--------------------------------------------------------------------
-parse_rrd_return(Arr) ->
-  parse_rrd_return_1(Arr).
+parse_rrd_return(Arr) -> parse_rrd_return_1(Arr).
 
 parse_rrd_return_1([[Desc]|Rest]) ->
-  Module = erlang:list_to_atom(string:strip(Desc)),
+  % Module = erlang:list_to_atom(string:strip(Desc)),
   [_|ArrOfValues] = Rest,
   Values = lists:map(fun([Line]) -> collect_rrd_values(Line) end, ArrOfValues),
-  {Module, lists:reverse(Values)}.
+  lists:reverse(Values).
  
 collect_rrd_values([]) -> {};
 collect_rrd_values(Str) ->
@@ -270,7 +276,12 @@ collect_rrd_values(Str) ->
 %% behest of the user on the command-line
 %%--------------------------------------------------------------------
 get_monitors() ->
-  ?TRACE("", file:list_dir(?RRD_DIRECTORY)),
+  Monitors = lists:map(fun(MonString) ->
+      {MonString, get_monitor_subtypes(MonString)}
+    end, get_monitor_types()),
+  Monitors.
+
+get_monitor_types() ->
   case file:list_dir(?RRD_DIRECTORY) of
     {error, Reason} -> 
       Reason;
@@ -281,3 +292,38 @@ get_monitors() ->
           erlang:list_to_atom(Name)
         end, FileList)
   end.
+  
+get_monitor_subtypes(MonitorAtom) ->
+  lists:map(fun(X) -> filename:basename(filename:rootname(X, ".rrd")) end, get_monitor_files(MonitorAtom)).
+
+% Get the actual file here
+get_monitor_subtype_file(MonitorAtom) when is_atom(MonitorAtom) -> get_monitor_subtype_file(erlang:term_to_list(MonitorAtom));
+get_monitor_subtype_file(MonitorString) ->
+  FileArray = filelib:wildcard( lists:append([?RRD_DIRECTORY, "/*", "/", MonitorString, ".rrd"]) ),
+  hd(FileArray).
+
+% Get the files associated with this monitor
+get_monitor_files(MonitorAtom) ->
+  Directory = lists:append([?RRD_DIRECTORY, "/", erlang:atom_to_list(MonitorAtom)]),
+  RRdFiles = lists:filter(fun(X) -> not filelib:is_dir(X) end, filelib:wildcard( lists:append([Directory, "/*.rrd"]) )),
+  RRdFiles.
+
+%%--------------------------------------------------------------------
+%% Function: is_known_monitor (Monitor, List) -> true/false
+%%--------------------------------------------------------------------
+is_known_monitor(Monitor) ->
+  KnownMonitors = get_monitors(),
+  is_known_monitor(Monitor, KnownMonitors).
+
+% is_known_monitor("memory-free", [{memory, ["memory-used", "memory-free"]}, {cpu, ["memory-idle", "memory-used"]}])
+is_known_monitor(Monitor, [{_AtomOfKnownMonitors, ListOfKnownMonitors}|Rest]) ->
+  case is_known_monitor(Monitor, ListOfKnownMonitors) of
+    true -> true;
+    _ -> is_known_monitor(Monitor, Rest)
+  end;
+
+% is_known_monitor("memory-free", {memory, ["memory-used", "memory-free"]})
+is_known_monitor(Monitor, {_AtomOfKnownMonitors, ListOfKnownMonitors}) ->  is_known_monitor(Monitor, ListOfKnownMonitors);
+
+% is_known_monitor("memory-free", ["memory-used", "memory-free"])
+is_known_monitor(Monitor, ListOfKnownMonitors) when is_list(ListOfKnownMonitors) -> lists:member(Monitor, ListOfKnownMonitors).

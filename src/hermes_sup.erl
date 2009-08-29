@@ -21,14 +21,11 @@ init([Type, Args]) ->
 
   application:start(stoplight),
   
-  {ok,{_SupFlags = {one_for_one, ?MAXIMUM_RESTARTS, ?MAX_DELAY_TIME},[
-    HermesLoggerSup,
-    RestServerSup,
-    RrdServerSup,
-    MonServerSup,
-    AmbassadorApp,
-    NagApp
-  ]}}.
+  InitialApplications = [HermesLoggerSup, RestServerSup, RrdServerSup, MonServerSup],
+  MaybeWithNagApp = merge_unless_true(no_nag, [NagApp], InitialApplications),
+  MaybeWithAmbassadorApp = merge_unless_true(no_ambassador, [AmbassadorApp], MaybeWithNagApp),
+  
+  {ok,{_SupFlags = {one_for_one, ?MAXIMUM_RESTARTS, ?MAX_DELAY_TIME}, MaybeWithAmbassadorApp}}.
   
 stop(Args) ->
   lists:map(fun(Term) -> Term:stop(Args) end, [
@@ -39,3 +36,15 @@ stop(Args) ->
                                             rest_app,
                                             ambassador_app
                                           ]).
+                                          
+%%====================================================================
+%% PRIVATE
+%%====================================================================
+merge_unless_true(Param, Merge, Into) ->
+  case application:get_env(hermes, Param) of
+    undefined -> lists:append([Merge, Into]);
+    {ok, CC} -> case CC of
+      true -> Into;
+      _ -> lists:append([Merge, Into])
+    end
+  end.
