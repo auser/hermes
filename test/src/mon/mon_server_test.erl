@@ -3,9 +3,11 @@
 -include_lib("eunit/include/eunit.hrl").
 
 setup() ->
+  erlrrd_sup:start_link(),
   mon_server:start_link([]).
 
 teardown(_Servers) ->
+  erlrrd_sup:stop(),
   mon_server:stop(),
   ok.
   
@@ -15,7 +17,9 @@ all_test_() ->
       fun() ->
         test_get_monitors(),
         test_is_known_monitor(),
-        test_get_related_monitors()
+        test_get_related_monitors(),
+        test_list_all_monitor_files(),
+        test_get_latest_average_for()
       end
     }
   }.
@@ -41,4 +45,15 @@ test_is_known_monitor() ->
   ?assert(mon_server:is_known_monitor('memory-idle'))
   ,?assert(mon_server:is_known_monitor('memory-idle'))
   ,?assertNot(mon_server:is_known_monitor('nothing-idle'))
+  .
+  
+test_list_all_monitor_files() ->
+  ?assertEqual(['cpu-free', 'cpu-idle', 'cpu-used', 
+                'memory-free', 'memory-idle', 'memory-used',
+                'disk-free', 'disk-idle', 'disk-used'], mon_server:list_all_monitor_files())
+  .
+  
+test_get_latest_average_for() ->
+  testing:create_fixture_rrds(),
+  ?assertEqual(5.0, mon_server:get_latest_average_for('cpu-idle'))
   .

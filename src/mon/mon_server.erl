@@ -17,7 +17,7 @@
             get_average/1, 
             get_average_over/2,
             get_latest_average_for/1,
-            list_monitors/0,
+            list_monitors/0, list_all_monitor_files/0,
             list_related_monitors/1, list_related_monitors/2,
             get_monitors/0,
             is_known_monitor/1
@@ -51,29 +51,12 @@ stop() -> gen_cluster:call(?SERVER, stop).
 %% Description: Get the latest average for the 
 %%  monitor given (60 seconds)
 %%--------------------------------------------------------------------
-get_latest_average_for([Monitor]) ->
+get_latest_average_for(Monitor) ->
   Avg = get_average_over(Monitor, 60),
-  {Monitor, [LastTuple|_]} = Avg,
+  ?TRACE("Avg", [Avg]),
+  [LastTuple|_] = Avg,
   {_Timestamp, Float} = LastTuple,
   Float.
-
-%%====================================================================
-%% CLUSTERS
-%%====================================================================
-cluster_average() ->
-  Monitors = get_monitors(),
-  cluster_average(Monitors, 300).
-  
-cluster_average(Time) ->
-  Monitors = get_monitors(),
-  cluster_average(Monitors, Time).
-
-cluster_average(Monitors, Time) ->
-  {ok, NodePids} = gen_cluster:plist(?SERVER),
-  lists:map(fun(Pid) -> 
-    MonitorOutput = rpc:call(node(Pid), ?MODULE, get_all_averages, [Monitors, Time]),
-    {node(Pid), MonitorOutput}
-  end, NodePids).
 
 %%--------------------------------------------------------------------
 %% Function: get_average (Module) -> {ok, Fetched}
@@ -104,6 +87,28 @@ list_monitors() -> gen_cluster:call(?MODULE, {list_monitors}).
 list_related_monitors(SuperMonitor) -> gen_cluster:call(?MODULE, {list_related_monitors, SuperMonitor}).
 list_related_monitors(SuperMonitor, SubType) -> gen_cluster:call(?MODULE, {list_related_monitors, SuperMonitor, SubType}).
 
+list_all_monitor_files() -> gen_cluster:call(?MODULE, {list_all_monitor_files}).
+
+
+%%====================================================================
+%% CLUSTERS
+%%====================================================================
+cluster_average() ->
+  Monitors = get_monitors(),
+  cluster_average(Monitors, 300).
+  
+cluster_average(Time) ->
+  Monitors = get_monitors(),
+  cluster_average(Monitors, Time).
+
+cluster_average(Monitors, Time) ->
+  {ok, NodePids} = gen_cluster:plist(?SERVER),
+  lists:map(fun(Pid) -> 
+    MonitorOutput = rpc:call(node(Pid), ?MODULE, get_all_averages, [Monitors, Time]),
+    {node(Pid), MonitorOutput}
+  end, NodePids).
+
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -133,23 +138,15 @@ handle_call({list_monitors}, _From, State) ->
 handle_call({list_related_monitors, SuperMonitor}, _From, State) -> {reply, get_related_monitors(SuperMonitor), State};
 handle_call({list_related_monitors, SuperMonitor, SubType}, _From, State) -> {reply, get_related_monitors(SuperMonitor, SubType), State};
 
-handle_call({get_average, Module, Seconds}, _From, State) ->
-  Fetched = handle_get_average(Module, Seconds),
-  {reply, Fetched, State};
-handle_call({get_average, Module}, _From, State) ->
-  Fetched = handle_get_average(Module, 60),
-  {reply, Fetched, State};
+handle_call({list_all_monitor_files}, _From, State)       -> {reply, get_all_monitor_files(), State};
+
+handle_call({get_average, Module, Seconds}, _From, State) -> {reply, handle_get_average(Module, Seconds), State};
+handle_call({get_average, Module}, _From, State)          -> {reply, handle_get_average(Module, 60), State};
   
-handle_call({get_all_averages, Monitors, Time}, _From, State) ->  
-  Reply = lists:map(fun(Mon) -> handle_get_average(Mon, Time) end, Monitors),
-  {reply, Reply, State};  
+handle_call({get_all_averages, Monitors, Time}, _From, State) ->  {reply, lists:map(fun(Mon) -> handle_get_average(Mon, Time) end, Monitors), State};  
 
-handle_call(stop, _From, State) ->
-  {stop, normal, stopped, State};
-
-handle_call(_Request, _From, State) ->
-  Reply = ok,
-  {reply, Reply, State}.
+handle_call(stop, _From, State)       -> {stop, normal, stopped, State};
+handle_call(_Request, _From, State)   -> {reply, ok, State}.
 
 %%--------------------------------------------------------------------
 %% Function: handle_cast(Msg, State) -> {noreply, State} |
@@ -247,6 +244,7 @@ handle_get_average(Module, OverTime) ->
       
       {ok, Fetched} = erlrrd:fetch(M),
       O = parse_rrd_return(Fetched),
+      ?TRACE("parse_rrd_return", [O]),
       O
   end.
 
@@ -310,6 +308,19 @@ get_monitor_files(MonitorAtom) ->
   Directory = lists:append([?RRD_DIRECTORY, "/", erlang:atom_to_list(MonitorAtom)]),
   RRdFiles = lists:filter(fun(X) -> not filelib:is_dir(X) end, filelib:wildcard( lists:append([Directory, "/*.rrd"]) )),
   RRdFiles.
+
+%%--------------------------------------------------------------------
+%% Function: get_all_monitor_files () -> ListOfFiles
+%% Description: 
+%%--------------------------------------------------------------------
+get_all_monitor_files() ->
+  AllMonitors = proplists:get_keys(get_monitors()),
+  ?TRACE("get_all_monitor_files", AllMonitors),
+  lists:flatten(
+    lists:map(fun(SuperMonitor) ->
+      get_monitor_subtypes(SuperMonitor)
+    end, AllMonitors)
+  ).
 
 %%--------------------------------------------------------------------
 %% Function: get_related_monitors (SuperMonitor) -> MonitorList

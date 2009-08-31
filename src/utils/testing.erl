@@ -116,6 +116,7 @@ create_fixture_rrds() ->
   % Create the directories
   lists:map(
     fun(Module) ->
+      file:del_dir(lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ])),
       file:make_dir(lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ]))
   end, Fixtures),
   

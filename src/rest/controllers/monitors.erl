@@ -26,10 +26,24 @@ get(["list"]) ->
   {?MODULE, {struct, JsonMonitors}};
 
 get([SuperMonitor]) ->
-  Monitors = mon_server:list_monitors(),
-  SuperMonitors = proplists:get_value(erlang:list_to_atom(SuperMonitor), Monitors),
-  ?TRACE("Monitor", [SuperMonitor, Monitors, SuperMonitors]),
-  Vals = handle_get_monitor_over_time({SuperMonitor, SuperMonitors}, 600),
+  % Monitors = mon_server:list_monitors(),
+  % SuperMonitors = proplists:get_value(erlang:list_to_atom(SuperMonitor), Monitors),
+  % ?TRACE("Monitor", [SuperMonitor, Monitors, SuperMonitors]),
+  % Vals = handle_get_monitor_over_time({SuperMonitor, SuperMonitors}, 600),
+  % {SuperMonitor, {struct, Vals}};
+  RelatedMonitors = mon_server:list_related_monitors(erlang:list_to_atom(SuperMonitor)),
+  % ?TRACE("RelatedMonitors", [RelatedMonitors]),
+  Regexp = lists:append(["(.*)?", SuperMonitor, "(.*)?"]),
+  Mons = lists:filter(fun(AtomModule) ->
+    % ?TRACE("Regexp: ", [erlang:atom_to_list(AtomModule), Regexp, regexp:match(erlang:atom_to_list(AtomModule), Regexp)]),
+    case regexp:match(erlang:atom_to_list(AtomModule), Regexp) of
+      {match, _, _} -> true;
+      nomatch -> false
+    end
+  end, RelatedMonitors),
+  ?TRACE("Mons", [Mons, Regexp, RelatedMonitors]),
+  Vals = handle_get_monitor_over_time({SuperMonitor, Mons}, 600),
+  ?TRACE("Vals", [Vals]),
   {SuperMonitor, {struct, Vals}};
 
 get([SuperMonitor, Monitor]) when is_list(Monitor) -> ?MODULE:get([SuperMonitor, Monitor, "600"]);
