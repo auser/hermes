@@ -106,7 +106,9 @@ clean_regexp_brackets(String) ->
 %% Function: create_fixture_rrds () -> {ok}
 %% Description: Create fixture rrd files in the fixtures directory
 %%--------------------------------------------------------------------
-create_fixture_rrds() ->
+create_fixture_rrds() -> create_fixture_rrds(["0.2","0.3","0.2","0.1","0.1","0.4", "0.7","0.9","1.5","0.9","0.1","0.1"]).
+  
+create_fixture_rrds(Values) ->
   Fixtures = [cpu, memory, disk],
   SubTypes = [idle, free, used],  
   
@@ -116,7 +118,6 @@ create_fixture_rrds() ->
   % Create the directories
   lists:map(
     fun(Module) ->
-      file:del_dir(lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ])),
       file:make_dir(lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ]))
   end, Fixtures),
   
@@ -129,20 +130,17 @@ create_fixture_rrds() ->
                               ]),
 
           Basedir = lists:append( [ ?RRD_DIRECTORY, "/", erlang:atom_to_list(Module), "/" ]),
-          Meth = lists:append([ Basedir,
-                                erlang:atom_to_list(Module), "-", erlang:atom_to_list(SubType), ".", "rrd", 
-                                Ras]),
+          File = lists:append([ Basedir, erlang:atom_to_list(Module), "-", erlang:atom_to_list(SubType), ".", "rrd"]),
+          
+          file:delete(File),
+          Meth = lists:append([File, Ras]),
           erlrrd:create(Meth)
         end, SubTypes)
     end, Fixtures),
   % Update the rrds with some fake data
   lists:map(
     fun(Module) -> 
-      io:format("Creating fixture data for ~p~n", [Module]),
-      Values = [
-        "0.5","0.3","0.2","0.1","0.1","0.4",
-        "0.7","0.9","1.1","0.9","0.8","0.5"
-      ],
+      % ?TRACE("Creating fixture data for ~p~n", [Module, Values]),
       % Update with the list of values
       lists:zipwith(
         fun(Value, Count) ->

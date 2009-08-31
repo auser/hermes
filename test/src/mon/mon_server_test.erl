@@ -15,6 +15,7 @@ all_test_() ->
   {setup, fun setup/0, fun teardown/1,
     {timeout, 300,
       fun() ->
+        testing:create_fixture_rrds(["0.1", "0.3"]), % create some dummy data
         test_get_monitors(),
         test_is_known_monitor(),
         test_get_related_monitors(),
@@ -54,6 +55,6 @@ test_list_all_monitor_files() ->
   .
   
 test_get_latest_average_for() ->
-  testing:create_fixture_rrds(),
-  ?assertEqual(5.0, mon_server:get_latest_average_for('cpu-idle'))
+  testing:create_fixture_rrds(["0.1", "0.3"]),
+  ?assertEqual(0.2, mon_server:get_latest_average_for('cpu-idle'))
   .

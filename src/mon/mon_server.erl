@@ -53,7 +53,6 @@ stop() -> gen_cluster:call(?SERVER, stop).
 %%--------------------------------------------------------------------
 get_latest_average_for(Monitor) ->
   Avg = get_average_over(Monitor, 60),
-  ?TRACE("Avg", [Avg]),
   [LastTuple|_] = Avg,
   {_Timestamp, Float} = LastTuple,
   Float.
@@ -244,7 +243,6 @@ handle_get_average(Module, OverTime) ->
       
       {ok, Fetched} = erlrrd:fetch(M),
       O = parse_rrd_return(Fetched),
-      ?TRACE("parse_rrd_return", [O]),
       O
   end.
 
@@ -315,7 +313,6 @@ get_monitor_files(MonitorAtom) ->
 %%--------------------------------------------------------------------
 get_all_monitor_files() ->
   AllMonitors = proplists:get_keys(get_monitors()),
-  ?TRACE("get_all_monitor_files", AllMonitors),
   lists:flatten(
     lists:map(fun(SuperMonitor) ->
       get_monitor_subtypes(SuperMonitor)

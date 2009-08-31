@@ -42,5 +42,4 @@ init(_) ->
   }.
 
 stop() ->
-  supervisor:stop([]),
   ok.
