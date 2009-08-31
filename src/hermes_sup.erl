@@ -17,11 +17,12 @@ init([Type, Args]) ->
   MonServerSup    = { mon_server_sup, {mon_server_sup, start_link, [Args]}, permanent, 2000, worker, []},  
   RestServerSup   = { rest_server,    {rest_app, start, [Type, Args]}, permanent,2000,worker,[]},
   AmbassadorApp   = { ambassador_app, {ambassador_app, start, [Type, Args]}, permanent, 2000, worker, []},
+  AthensApp       = { athens_srv,     {athens_app, start, [Type, Args]}, permanent, 2000, worker, []},
   NagApp          = { nag_app,        {nag_app, start, [Type, Args]}, permanent, 2000, worker, []},
 
   application:start(stoplight),
   
-  InitialApplications = [HermesLoggerSup, RestServerSup, RrdServerSup, MonServerSup],
+  InitialApplications = [HermesLoggerSup, RestServerSup, RrdServerSup, MonServerSup, AthensApp],
   MaybeWithNagApp = merge_unless_true(no_nag, [NagApp], InitialApplications),
   MaybeWithAmbassadorApp = merge_unless_true(no_ambassador, [AmbassadorApp], MaybeWithNagApp),
   
@@ -34,6 +35,7 @@ stop(Args) ->
                                             erlrrd_app, 
                                             mon_server_sup, 
                                             rest_app,
+                                            athens_app,
                                             ambassador_app
                                           ]).
                                           

@@ -83,28 +83,37 @@ handle_cast(_Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
-  Monitors = mon_server:list_monitors(),
-  % ?INFO("Time to nag: ~p~n", [Monitors]),
+  {ok, MonReturn} = ambassador:ask("monitors", []),
+  Monitors = lists:map(fun(MonString) -> 
+    LocalMon = case string:tokens(MonString, ":") of
+      [M, "null"] -> M;
+      E           -> E
+    end,
+    utils:turn_to_atom(LocalMon)
+  end, MonReturn),
+  ?INFO("Time to nag: ~p~n", [Monitors]),
   lists:map(fun(Mon) ->
     Avg = mon_server:get_average_over(Mon, Interval),
-    % ?INFO("Average: ~p for ~p~n", [Avg, Mon]),
-    % {disk,[{"1250201400",0.4}]}
-    {Mon, [LastTuple|_]} = Avg,
+    ?INFO("Average: ~p for ~p~n", [Avg, Mon]),
+    % [{"1250201400",0.4}]
+    [LastTuple|_] = Avg,
     
-    {_Timestamp, Float} = LastTuple,    
+    {_Timestamp, Float} = LastTuple,
+    ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
                                           erlang:float_to_list(Float)
                                         ]),
     
     case Out of
-      {ok, Resp} ->
+      {ok, [Resp]} ->
+        ?TRACE("Resp", [Resp]),
         case string:tokens(Resp, ":") of
           ["vote_for", Action]  -> athens:call_ambassador_election(Mon, Action);
           [Action]              -> ambassador:ask(Action, []);
           Else                  -> ?INFO("Unhandled Event: ~p~n", [Else])
         end,
-        % ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
+        ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
         timer:sleep(1000),
         Resp;
       {error, _} -> ok

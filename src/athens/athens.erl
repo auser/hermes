@@ -7,6 +7,7 @@
 %%%-------------------------------------------------------------------
 
 -module (athens).
+-include ("hermes.hrl").
 
 -export ([  call_election/2,
             call_ambassador_election/2,
@@ -18,7 +19,9 @@
 nodes() ->  athens_srv:nodes().
 
 % Call an election
-call_ambassador_election(Name, VoteValue) -> athens_srv:call_election(?MODULE, ambassador_check, [Name], VoteValue).
+call_ambassador_election(Name, VoteValue) -> 
+  ?TRACE("call_ambassador_election", [Name, VoteValue]),
+  athens_srv:call_election(?MODULE, ambassador_check, Name, VoteValue).
 call_ambassador_election_on(Name, VoteValue, Nodes) -> athens_srv:call_election(?MODULE, ambassador_check, [Name], VoteValue, Nodes).
   
 call_election(MFA, Value) ->

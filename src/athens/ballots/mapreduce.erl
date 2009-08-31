@@ -3,6 +3,7 @@
 -export ([submit/4, submit/5]).
 
 submit(M, F, A, Value) ->
+  ?TRACE("Submit", [M,F,A,Value]),
   Nodes = athens:nodes(),
   submit(M, F, A, Value, Nodes).
   
