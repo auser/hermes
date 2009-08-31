@@ -19,7 +19,8 @@
             get_latest_average_for/1,
             list_monitors/0,
             list_related_monitors/1, list_related_monitors/2,
-            get_monitors/0
+            get_monitors/0,
+            is_known_monitor/1
          ]).
 % Aggregates
 -export ([get_all_averages/0, get_all_averages/1, get_all_averages/2,
@@ -133,7 +134,6 @@ handle_call({list_related_monitors, SuperMonitor}, _From, State) -> {reply, get_
 handle_call({list_related_monitors, SuperMonitor, SubType}, _From, State) -> {reply, get_related_monitors(SuperMonitor, SubType), State};
 
 handle_call({get_average, Module, Seconds}, _From, State) ->
-  ?TRACE("Handling call for get_average", [Module]),
   Fetched = handle_get_average(Module, Seconds),
   {reply, Fetched, State};
 handle_call({get_average, Module}, _From, State) ->
@@ -231,7 +231,6 @@ handle_get_average(Monitors, OverTime) when is_list(Monitors) ->
   lists:map(fun(SubMon) -> {SubMon, handle_get_average(SubMon, OverTime)} end, Monitors);
 
 handle_get_average(Module, OverTime) ->
-  ?TRACE("Trying to handle_get_average", [Module]),
   case is_known_monitor(Module) of
     false -> {unknown_monitor, []};
     true ->
@@ -340,7 +339,6 @@ get_related_monitors(SuperMonitor, SubType) ->
 %%--------------------------------------------------------------------
 is_known_monitor(Monitor) ->
   KnownMonitors = get_monitors(),
-  ?TRACE("is_known_monitor", [KnownMonitors]),
   is_known_monitor(Monitor, KnownMonitors).
 
 % is_known_monitor("memory-free", [{memory, ["memory-used", "memory-free"]}, {cpu, ["memory-idle", "memory-used"]}])

@@ -32,15 +32,12 @@ get([SuperMonitor]) ->
   Vals = handle_get_monitor_over_time({SuperMonitor, SuperMonitors}, 600),
   {SuperMonitor, {struct, Vals}};
 
-get([SuperMonitor, Monitor]) when is_list(Monitor) ->
-  AtomMonitor = utils:turn_to_atom(lists:append([SuperMonitor])),
-  ?TRACE("Trying to get", [AtomMonitor]),
-  Vals = handle_get_monitor_over_time(Monitor, 600),
-  {SuperMonitor, {struct, Vals}};
+get([SuperMonitor, Monitor]) when is_list(Monitor) -> ?MODULE:get([SuperMonitor, Monitor, "600"]);
  
-get([Monitor, Time]) ->
-  Vals = handle_get_monitor_over_time(Monitor, erlang:list_to_integer(Time)),
-  {Monitor, Vals};
+get([SuperMonitor, Monitor, Time]) when is_list(Monitor) ->
+  RelatedMonitors = mon_server:list_related_monitors(utils:turn_to_atom(SuperMonitor), utils:turn_to_atom(Monitor)),
+  Vals = handle_get_monitor_over_time(RelatedMonitors, erlang:list_to_integer(Time)),
+  {SuperMonitor, {struct, Vals}};
   
 get(_Path) -> {"error", <<"unhandled">>}.
 

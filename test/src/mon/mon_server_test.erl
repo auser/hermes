@@ -14,6 +14,7 @@ all_test_() ->
     {timeout, 300,
       fun() ->
         test_get_monitors(),
+        test_is_known_monitor(),
         test_get_related_monitors()
       end
     }
@@ -34,4 +35,10 @@ test_get_related_monitors() ->
   ,?assertEqual([], mon_server:list_related_monitors(nothing_here))
   ,?assertEqual(['memory-free', 'memory-idle', 'memory-used'], mon_server:list_related_monitors(memory))
   ,?assertEqual(['cpu-idle'], mon_server:list_related_monitors(cpu, idle))
+  .
+  
+test_is_known_monitor() ->
+  ?assert(mon_server:is_known_monitor('memory-idle'))
+  ,?assert(mon_server:is_known_monitor('memory-idle'))
+  ,?assertNot(mon_server:is_known_monitor('nothing-idle'))
   .
