@@ -31,8 +31,14 @@ get([SuperMonitor]) ->
   ?TRACE("Monitor", [SuperMonitor, Monitors, SuperMonitors]),
   Vals = handle_get_monitor_over_time({SuperMonitor, SuperMonitors}, 600),
   {SuperMonitor, {struct, Vals}};
+
+get([SuperMonitor, Monitor]) when is_list(Monitor) ->
+  AtomMonitor = utils:turn_to_atom(lists:append([SuperMonitor])),
+  ?TRACE("Trying to get", [AtomMonitor]),
+  Vals = handle_get_monitor_over_time(Monitor, 600),
+  {SuperMonitor, {struct, Vals}};
  
-get([Monitor, Time]) -> 
+get([Monitor, Time]) ->
   Vals = handle_get_monitor_over_time(Monitor, erlang:list_to_integer(Time)),
   {Monitor, Vals};
   
@@ -58,6 +64,6 @@ handle_get_monitor_over_time(MonitorAtom, Time) ->
       O = lists:map(fun({T, B}) -> 
           {T, utils:turn_binary(change_to_float(B))}
         end, ListOfAtoms),
-      {erlang:list_to_atom(A), [{struct, O}]}
+      {A, [{struct, O}]}
     end, Vals),
   PrintableVals.

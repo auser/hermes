@@ -10,7 +10,8 @@
 -define (INFO (Msg, Args),    hermes_logger:info(Msg, Args)).
 -define (ERROR (Msg, Args),   hermes_logger:error(Msg, Args)).
 
--define (TESTING, true).
+-define (DEBUG, true).
+-define (TESTING, ?DEBUG).
 
 -define (CONFIG_FILE, case ?TESTING of
   true -> "include/config.cfg";
@@ -31,8 +32,12 @@ end).
           {clouds_config, "/etc/poolparty/clouds.rb"}
         ]). 
 
--define (LOG_MESSAGE (Message), hermes_logger:append({erlang:localtime(), ?MODULE, ?LINE, Message})).
--define(TRACE(X, M),  io:format(user, "TRACE ~p:~p ~p ~p~n", [?MODULE, ?LINE, X, M])).
+-define (LOG_MESSAGE (Message, Args), io_lib:fwrite("~p~p~n", [Message, Args])).
+
+-define (TRACE(X, M), case ?DEBUG of
+  true -> io:format(user, "TRACE ~p:~p ~p ~p~n", [?MODULE, ?LINE, X, M]);
+  false -> ok
+end).
 -define (DEBUG_LOG (Bool, Message, Opts), 
   case Bool of true -> 
     io:format(Message, Opts); 

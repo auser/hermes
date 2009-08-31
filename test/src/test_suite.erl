@@ -9,5 +9,6 @@ all_test_() ->
     {module, rest_server_test},
     {module, utils_test},
     {module, athens_test},
+    {module, mon_server_test},
     {module, mapreduce_test}
   ].

@@ -18,6 +18,7 @@
             get_average_over/2,
             get_latest_average_for/1,
             list_monitors/0,
+            list_related_monitors/1, list_related_monitors/2,
             get_monitors/0
          ]).
 % Aggregates
@@ -95,9 +96,12 @@ get_average_over(Module, Seconds) -> gen_cluster:call(?MODULE, {get_average, Mod
 
 %%--------------------------------------------------------------------
 %% Function: list_monitors () -> {ok, List}
-%% Description: Get the list of monitors and reasonable statistics
+%% Description: Get the list of monitors
 %%--------------------------------------------------------------------
 list_monitors() -> gen_cluster:call(?MODULE, {list_monitors}).
+
+list_related_monitors(SuperMonitor) -> gen_cluster:call(?MODULE, {list_related_monitors, SuperMonitor}).
+list_related_monitors(SuperMonitor, SubType) -> gen_cluster:call(?MODULE, {list_related_monitors, SuperMonitor, SubType}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -123,12 +127,13 @@ init(_Args) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({list_monitors}, _From, State) ->
-  Mons = get_monitors(),
-  ?LOG_MESSAGE(io_lib:fwrite("Monitors: ~p~n", [Mons])),
-  {reply, Mons, State};
+  {reply, get_monitors(), State};
+  
+handle_call({list_related_monitors, SuperMonitor}, _From, State) -> {reply, get_related_monitors(SuperMonitor), State};
+handle_call({list_related_monitors, SuperMonitor, SubType}, _From, State) -> {reply, get_related_monitors(SuperMonitor, SubType), State};
 
 handle_call({get_average, Module, Seconds}, _From, State) ->
-  ?TRACE("Handling call for get_average", Module),
+  ?TRACE("Handling call for get_average", [Module]),
   Fetched = handle_get_average(Module, Seconds),
   {reply, Fetched, State};
 handle_call({get_average, Module}, _From, State) ->
@@ -220,12 +225,13 @@ handle_leave(LeavingPid, Pidlist, Info, State) ->
 %%              over the last Seconds
 %%--------------------------------------------------------------------
 handle_get_average({_SuperMon, SubMonitors}, OverTime) ->
-  lists:map(fun(SubMon) -> {SubMon, handle_get_average(SubMon, OverTime)} end, SubMonitors);
+  lists:map(fun(SubMon) -> {SubMon, handle_get_average(utils:turn_to_atom(SubMon), OverTime)} end, SubMonitors);
 
 handle_get_average(Monitors, OverTime) when is_list(Monitors) ->
   lists:map(fun(SubMon) -> {SubMon, handle_get_average(SubMon, OverTime)} end, Monitors);
 
 handle_get_average(Module, OverTime) ->
+  ?TRACE("Trying to handle_get_average", [Module]),
   case is_known_monitor(Module) of
     false -> {unknown_monitor, []};
     true ->
@@ -275,14 +281,13 @@ collect_rrd_values(Str) ->
 %% behest of the user on the command-line
 %%--------------------------------------------------------------------
 get_monitors() ->
-  Monitors = lists:map(fun(MonString) ->
-      {MonString, get_monitor_subtypes(MonString)}
-    end, get_monitor_types()),
+  Monitors = lists:map(fun(MonString) -> {MonString, get_monitor_subtypes(MonString)} end, get_monitor_types()),
   Monitors.
 
 get_monitor_types() ->
   case file:list_dir(?RRD_DIRECTORY) of
     {error, Reason} -> 
+      ?LOG_MESSAGE("Error getting monitor types", [Reason]),
       Reason;
     {ok, FileList} ->
       lists:map(
@@ -293,10 +298,10 @@ get_monitor_types() ->
   end.
   
 get_monitor_subtypes(MonitorAtom) ->
-  lists:map(fun(X) -> filename:basename(filename:rootname(X, ".rrd")) end, get_monitor_files(MonitorAtom)).
+  lists:map(fun(X) -> erlang:list_to_atom(filename:basename(filename:rootname(X, ".rrd"))) end, get_monitor_files(MonitorAtom)).
 
 % Get the actual file here
-get_monitor_subtype_file(MonitorAtom) when is_atom(MonitorAtom) -> get_monitor_subtype_file(erlang:term_to_list(MonitorAtom));
+get_monitor_subtype_file(MonitorAtom) when is_atom(MonitorAtom) -> get_monitor_subtype_file(utils:turn_to_list(MonitorAtom));
 get_monitor_subtype_file(MonitorString) ->
   FileArray = filelib:wildcard( lists:append([?RRD_DIRECTORY, "/*", "/", MonitorString, ".rrd"]) ),
   hd(FileArray).
@@ -308,10 +313,34 @@ get_monitor_files(MonitorAtom) ->
   RRdFiles.
 
 %%--------------------------------------------------------------------
+%% Function: get_related_monitors (SuperMonitor) -> MonitorList
+%% Description: 
+%%-------------------------------------------------------------------- 
+get_related_monitors(SuperMonitor) ->
+  AllMonitors = get_monitors(),
+  case proplists:get_value(SuperMonitor, AllMonitors) of
+    undefined -> [];
+    V -> V
+  end.
+  
+get_related_monitors(SuperMonitor, SubType) ->
+  RelatedMonitors = get_related_monitors(SuperMonitor),
+  % ?TRACE("RelatedMonitors", [RelatedMonitors]),
+  Regexp = lists:append(["(.)*", erlang:atom_to_list(SubType), "(.*)"]),
+  lists:filter(fun(AtomModule) ->
+    % ?TRACE("Regexp: ", [erlang:atom_to_list(AtomModule), Regexp, regexp:match(erlang:atom_to_list(AtomModule), Regexp)]),
+    case regexp:match(erlang:atom_to_list(AtomModule), Regexp) of
+      {match, _, _} -> true;
+      nomatch -> false
+    end
+  end, RelatedMonitors).
+
+%%--------------------------------------------------------------------
 %% Function: is_known_monitor (Monitor, List) -> true/false
 %%--------------------------------------------------------------------
 is_known_monitor(Monitor) ->
   KnownMonitors = get_monitors(),
+  ?TRACE("is_known_monitor", [KnownMonitors]),
   is_known_monitor(Monitor, KnownMonitors).
 
 % is_known_monitor("memory-free", [{memory, ["memory-used", "memory-free"]}, {cpu, ["memory-idle", "memory-used"]}])
