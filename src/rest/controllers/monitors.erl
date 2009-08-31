@@ -9,14 +9,13 @@ get([]) ->
       case Monitor of
         unknown_monitor -> unknown_monitor;
         _Else ->
+          ?TRACE("Monitors", [Monitor]),
           O = handle_get_monitor_over_time(Monitor, 600),
-          ?TRACE("O (in get)", O),
-          O
+          {struct, O}
       end
     end,
     Monitors),
-  % ?INFO("MonitorData: ~p~n", [MonitorData]),
-  {?MODULE, {struct, MonitorData}};
+  {?MODULE, MonitorData};
 
 get(["list"]) ->
   Monitors = mon_server:list_monitors(),
@@ -26,9 +25,12 @@ get(["list"]) ->
     
   {?MODULE, {struct, JsonMonitors}};
 
-get([Monitor]) ->
-  Vals = handle_get_monitor_over_time(Monitor, 600),
-  {Monitor, Vals};
+get([SuperMonitor]) ->
+  Monitors = mon_server:list_monitors(),
+  SuperMonitors = proplists:get_value(erlang:list_to_atom(SuperMonitor), Monitors),
+  ?TRACE("Monitor", [SuperMonitor, Monitors, SuperMonitors]),
+  Vals = handle_get_monitor_over_time({SuperMonitor, SuperMonitors}, 600),
+  {SuperMonitor, {struct, Vals}};
  
 get([Monitor, Time]) -> 
   Vals = handle_get_monitor_over_time(Monitor, erlang:list_to_integer(Time)),
@@ -56,6 +58,6 @@ handle_get_monitor_over_time(MonitorAtom, Time) ->
       O = lists:map(fun({T, B}) -> 
           {T, utils:turn_binary(change_to_float(B))}
         end, ListOfAtoms),
-      {erlang:list_to_atom(A), {struct, O}}
+      {erlang:list_to_atom(A), [{struct, O}]}
     end, Vals),
   PrintableVals.

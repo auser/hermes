@@ -219,13 +219,13 @@ handle_leave(LeavingPid, Pidlist, Info, State) ->
 %% Description: Handle the fetching of averages for rrd
 %%              over the last Seconds
 %%--------------------------------------------------------------------
-handle_get_average({SuperMon, SubMonitors}, OverTime) ->
-  ?TRACE("----- Handle get average for", [SuperMon, SubMonitors]),
+handle_get_average({_SuperMon, SubMonitors}, OverTime) ->
   lists:map(fun(SubMon) -> {SubMon, handle_get_average(SubMon, OverTime)} end, SubMonitors);
-  
+
+handle_get_average(Monitors, OverTime) when is_list(Monitors) ->
+  lists:map(fun(SubMon) -> {SubMon, handle_get_average(SubMon, OverTime)} end, Monitors);
+
 handle_get_average(Module, OverTime) ->
-  ?TRACE("==== handle_get_average", [Module, OverTime]),  
-  
   case is_known_monitor(Module) of
     false -> {unknown_monitor, []};
     true ->
@@ -242,7 +242,6 @@ handle_get_average(Module, OverTime) ->
       
       {ok, Fetched} = erlrrd:fetch(M),
       O = parse_rrd_return(Fetched),
-      ?TRACE("parsed rrd", [O]),
       O
   end.
 
@@ -255,7 +254,7 @@ handle_get_average(Module, OverTime) ->
 %%--------------------------------------------------------------------
 parse_rrd_return(Arr) -> parse_rrd_return_1(Arr).
 
-parse_rrd_return_1([[Desc]|Rest]) ->
+parse_rrd_return_1([[_Desc]|Rest]) ->
   % Module = erlang:list_to_atom(string:strip(Desc)),
   [_|ArrOfValues] = Rest,
   Values = lists:map(fun([Line]) -> collect_rrd_values(Line) end, ArrOfValues),
