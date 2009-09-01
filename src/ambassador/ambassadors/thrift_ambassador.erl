@@ -228,8 +228,8 @@ build_start_command(Action, Args) ->
   
   ExtraArgs = lists:append([
                       [" --port ", erlang:integer_to_list(ThriftPort)], 
-                      [" -c ", CloudConfig]
-                      % [" -n ", CloudName]
+                      [" -c", CloudConfig], 
+                      [" -n", CloudName]
                     ]),
   
   StartCommand = lists:flatten(lists:append([["cloud thrift ", Action, " "], [ExtraArgs]])),
