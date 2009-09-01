@@ -102,14 +102,17 @@ init([]) ->
     {ok, CName} -> CName
   end,
   
-  CloudName = case file:read_file(CNameArg) of
+  CloudName = case file:read_file(string:strip(CNameArg)) of
     {ok, Binary} ->
       [Cnameout|_] = string:tokens(utils:turn_to_list(Binary), "\n"),
       ensure_is_list(Cnameout);
     {error, _} -> ensure_is_list(CNameArg)
   end,
   
-  ProtoArgs = [{proto_port, Port}, {clouds_config, CloudConfig}, {cloud_name, CloudName}],
+  ProtoArgs = [
+    {proto_port, Port}, 
+    {clouds_config, CloudConfig}, 
+    {cloud_name, CloudName}],
   
   ?INFO("STARTING ~p with ~p~n", [?MODULE, ProtoArgs]),
   ?PROTO:start_link(ProtoArgs),
