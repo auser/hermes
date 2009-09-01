@@ -29,6 +29,7 @@ turn_binary_test_() ->
     ?_assertEqual(<<"a">>, utils:turn_binary(a)),
     ?_assertEqual(<<"a">>, utils:turn_binary(<<"a">>)),
     ?_assertEqual(<<"true">>, utils:turn_binary(true)),
+    ?_assertEqual(<<1,2>>, utils:turn_binary([1, 2])),
     ?_assertEqual(term_to_binary({a, "a"}), utils:turn_binary({a, "a"})),
     ?_assertEqual(<<"1234">>, utils:turn_binary(1234))
   ].

@@ -33,7 +33,14 @@ turn_binary(Arg) when is_boolean(Arg) -> erlang:list_to_binary(erlang:atom_to_li
 turn_binary(Arg) when is_tuple(Arg) -> erlang:term_to_binary(Arg);
 turn_binary(Arg) when is_integer(Arg) -> erlang:list_to_binary(erlang:integer_to_list(Arg));
 turn_binary(Arg) when is_float(Arg) -> erlang:list_to_binary(erlang:float_to_list(Arg));
-turn_binary(Arg) -> erlang:list_to_binary(Arg).
+turn_binary(Arg) -> 
+  case catch erlang:list_to_binary(Arg) of
+    {'EXIT',{badarg, _Reason}} -> turn_list_to_binary(Arg, []);
+    F -> F
+  end.
+
+turn_list_to_binary([], Acc) -> lists:reverse(Acc);
+turn_list_to_binary([H|T], Acc) -> turn_list_to_binary(T, [turn_binary(H)|Acc]).
 
 turn_to_atom(Arg) when is_atom(Arg) -> Arg;
 turn_to_atom(Arg) when is_integer(Arg) -> erlang:list_to_atom(erlang:integer_to_list(Arg));
