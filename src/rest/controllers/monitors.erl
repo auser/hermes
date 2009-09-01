@@ -73,7 +73,7 @@ handle_get_monitor_over_time(MonitorAtom, Time) ->
   PrintableVals = lists:map(fun(V) ->
       {A, ListOfAtoms} = V,
       O = lists:map(fun({T, B}) -> 
-          {T, utils:turn_binary(change_to_float(B))}
+          {T, change_to_float(B)}
         end, ListOfAtoms),
       {A, [{struct, O}]}
     end, Vals),
