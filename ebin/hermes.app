@@ -4,7 +4,8 @@
         {modules, [
                 
                 % hermes
-                hermes,ambassador,ambassador_app,ambassador_sup,assets,athens,athens_srv,
+                hermes,ambassador,ambassador_app,ambassador_sup,assets,
+                athens,athens_srv,athens_app,athens_sup,
                 cluster,commandInterface_thrift,config,erlrrd,erlrrd_app,erlrrd_sup,
                 hermes_logger,hermes_sup,home,loudmouth,make_boot,mapreduce,mon_server,
                 mon_server_sup,monitors,nag,nag_app,nag_sup,poolparty_types,protobuffs_ambassador,
