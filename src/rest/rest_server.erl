@@ -154,7 +154,9 @@ handle(Path, Req) ->
   
   case CAtom of
     home -> 
-      IndexContents = case file:read_file("web/index.html") of
+      WebFile = lists:append([filename:absname("."), "/web/index.html"]),
+      ?TRACE("WebFile: ", [WebFile]),
+      IndexContents = case file:read_file(WebFile) of
         {ok, Contents} -> Contents;
         _ -> "
           <html><head>
