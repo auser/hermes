@@ -1,6 +1,6 @@
 {application, hermes, [
         {description, "Hermes"},
-        {vsn, "0.0.2"},
+        {vsn, "0.0.3"},
         {modules, [
                 
                 % hermes
