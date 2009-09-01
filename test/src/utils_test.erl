@@ -8,10 +8,10 @@ format_ip_test_() ->
     ?_assertEqual("99.2.3.2", utils:format_ip([99,2,3,2]))
   ].
 
-get_rrd_location_test_() ->
-  [
-    ?_assertEqual("hi/hello.rrd", lists:flatten([utils:get_rrd_location("hello", "hi")]))
-  ].
+% get_rrd_location_test_() ->
+%   [
+%     ?_assertEqual("hi/hello.rrd", lists:flatten([utils:get_rrd_location("hello", "hi")]))
+%   ].
   
 delete_test_() ->
   [
@@ -44,4 +44,11 @@ turn_to_list_test_() ->
   [
     ?_assertEqual("a", utils:turn_to_list(a)),
     ?_assertEqual("a", utils:turn_to_list(<<"a">>))
+  ].
+  
+turn_to_float_test_() ->
+  [    
+    ?_assertEqual(0.3, utils:turn_to_float("0.3")),
+    ?_assertEqual(0.4, utils:turn_to_float(0.4)),
+    ?_assertEqual([0.3, 0.2, 0.9], utils:turn_to_float("0.3 0.2 0.9"))
   ].

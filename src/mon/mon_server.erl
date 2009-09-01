@@ -266,7 +266,7 @@ collect_rrd_values(Str) ->
   [Time|[V]] = string:tokens(Str, ":"),
   Val = case string:strip(V) of
     "nan" -> 0.0;
-    F -> erlang:list_to_float(F)
+    F -> utils:turn_to_float(F)
   end,
   {Time, Val}.
 

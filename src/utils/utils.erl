@@ -43,6 +43,25 @@ turn_to_list(Arg) when is_list(Arg) -> [ turn_to_list(A) || A <- Arg ];
 turn_to_list(Bin) when is_binary(Bin) -> erlang:binary_to_list(Bin);
 turn_to_list(Arg) -> erlang:atom_to_list(Arg).
 
+turn_to_float(Arg) when is_list(Arg) -> 
+  case catch erlang:list_to_float(Arg) of
+    {'EXIT',{badarg, Reason}} ->
+      io:format("Error: ~p (~p)~n", [Arg, regexp:match(Arg, " ")]),
+      case regexp:match(Arg, " ") of
+        {match, _, _} ->           
+          {ok, Floats} = regexp:split(Arg, " "),
+          io:format("Floats: ~p~n", [Floats]),
+          turn_to_float_from_list(Floats, []);
+        _ -> ?TRACE("Uh oh. Error with float", [Arg, Reason])
+      end;
+    F -> F
+  end;
+turn_to_float(Arg) -> Arg.
+
+% Turn list
+turn_to_float_from_list([], Acc)    -> lists:reverse(Acc);
+turn_to_float_from_list([H|T], Acc) -> turn_to_float_from_list(T, [turn_to_float(H)|Acc]).
+
 % Gross
 format_ip({A,B,C,D}) -> integer_to_list(A) ++ "." ++ integer_to_list(B) ++ "." ++ integer_to_list(C) ++ "." ++ integer_to_list(D);
 format_ip([A,B,C,D]) -> integer_to_list(A) ++ "." ++ integer_to_list(B) ++ "." ++ integer_to_list(C) ++ "." ++ integer_to_list(D).
