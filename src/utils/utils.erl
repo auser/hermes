@@ -7,11 +7,11 @@
 %% Function: get_rrd_location (Module) -> {ok, Filename}
 %% Description: Get the location of an rrd file
 %%--------------------------------------------------------------------
-get_rrd_location(Module) ->
-  get_rrd_location(Module, ?RRD_DIRECTORY).
-
-get_rrd_location(Module, Dir) ->
-  io_lib:fwrite("~s/~s.rrd", [Dir, Module]).
+get_rrd_location() ->
+  case os:getenv("HERMES_RRD_DIRECTORY") of
+      false -> ?RRD_DIRECTORY;
+      Dir -> Dir
+  end.
 
 
 % utils:delete(a, [{port, "90"}, {a, "danger"}]). => [{port,"90"}]

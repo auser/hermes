@@ -20,7 +20,6 @@ nodes() ->  athens_srv:nodes().
 
 % Call an election
 call_ambassador_election(Name, VoteValue) -> 
-  ?TRACE("call_ambassador_election", [Name, VoteValue]),
   athens_srv:call_election(?MODULE, ambassador_check, Name, VoteValue).
 call_ambassador_election_on(Name, VoteValue, Nodes) -> athens_srv:call_election(?MODULE, ambassador_check, [Name], VoteValue, Nodes).
   

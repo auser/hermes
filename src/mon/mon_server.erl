@@ -280,7 +280,7 @@ get_monitors() ->
   Monitors.
 
 get_monitor_types() ->
-  case file:list_dir(?RRD_DIRECTORY) of
+  case file:list_dir(utils:get_rrd_location()) of
     {error, Reason} -> 
       ?LOG_MESSAGE("Error getting monitor types", [Reason]),
       Reason;
@@ -298,12 +298,12 @@ get_monitor_subtypes(MonitorAtom) ->
 % Get the actual file here
 get_monitor_subtype_file(MonitorAtom) when is_atom(MonitorAtom) -> get_monitor_subtype_file(utils:turn_to_list(MonitorAtom));
 get_monitor_subtype_file(MonitorString) ->
-  FileArray = filelib:wildcard( lists:append([?RRD_DIRECTORY, "/*", "/", MonitorString, ".rrd"]) ),
+  FileArray = filelib:wildcard( lists:append([utils:get_rrd_location(), "/*", "/", MonitorString, ".rrd"]) ),
   hd(FileArray).
 
 % Get the files associated with this monitor
 get_monitor_files(MonitorAtom) ->
-  Directory = lists:append([?RRD_DIRECTORY, "/", erlang:atom_to_list(MonitorAtom)]),
+  Directory = lists:append([utils:get_rrd_location(), "/", erlang:atom_to_list(MonitorAtom)]),
   RRdFiles = lists:filter(fun(X) -> not filelib:is_dir(X) end, filelib:wildcard( lists:append([Directory, "/*.rrd"]) )),
   RRdFiles.
 

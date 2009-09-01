@@ -10,8 +10,7 @@ format_ip_test_() ->
 
 get_rrd_location_test_() ->
   [
-    ?_assertEqual("hi/hello.rrd", lists:flatten([utils:get_rrd_location("hello", "hi")])),
-    ?_assertEqual(lists:flatten([?RRD_DIRECTORY, "/rrdfile.rrd"]), lists:flatten([utils:get_rrd_location("rrdfile")]))
+    ?_assertEqual("hi/hello.rrd", lists:flatten([utils:get_rrd_location("hello", "hi")]))
   ].
   
 delete_test_() ->

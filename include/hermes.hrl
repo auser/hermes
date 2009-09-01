@@ -20,7 +20,7 @@ end).
 
 -define (RRD_DIRECTORY, case ?TESTING of
   true -> "test/fixtures";
-  false -> "/var/hermes"
+  false -> "/var/lib/collectd"
 end).
 
 -define (DEFAULT_CONFIG, [
@@ -28,6 +28,7 @@ end).
           {module, hermes},
           {proto_port, 11223},
           {log_path, "logs/hermes.log"},
+          {rrd_directory, "/var/lib/collectd"},
           {cloud_name, "/etc/poolparty/cloud_name"},
           {clouds_config, "/etc/poolparty/clouds.rb"}
         ]). 
