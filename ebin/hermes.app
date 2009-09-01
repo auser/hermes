@@ -10,6 +10,7 @@
                 hermes_logger,hermes_sup,home,loudmouth,make_boot,mapreduce,mon_server,
                 mon_server_sup,monitors,nag,nag_app,nag_sup,poolparty_types,protobuffs_ambassador,
                 rest_app,rest_server,rest_server_sup,testing,thrift_ambassador,utils,
+                httpd_util,
 
                 % gen_cluster
                 gen_cluster,
