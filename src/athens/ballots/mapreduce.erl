@@ -101,7 +101,11 @@ ensure_is_node(Node) -> Node.
 
 % strip
 strip_extraneous_values(Resp) ->
-  case string:tokens(Resp, ":") of
+  Response = case Resp of
+    {ok, V} -> V;
+    F -> F
+  end,
+  case string:tokens(Response, ":") of
     ["vote_for", Action]  -> Action;
     [Action]              -> Action;
     Else                  -> Else
