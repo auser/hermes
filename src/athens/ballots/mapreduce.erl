@@ -33,7 +33,8 @@ reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
   % Collect the map reduce
   Dict1 = collect_reductions(TotalNumNodes, Dict0),
   % Reduce the values
-  Acc = dict:fold(fun(_Node, Value, FoldAcc) ->
+  Acc = dict:fold(fun(_Node, V, FoldAcc) ->
+      Value = strip_extraneous_values(V),
       ?INFO("Folding on value: ~p~n", [Value]),
       O = case Value of
         ComparisonValue -> 1.0;
@@ -97,3 +98,11 @@ ensure_are_nodes(List) ->
 % ensure_is_node(Node) when is_pid(Node) -> erlang:node(Node);
 ensure_is_node(Node) when is_atom(Node) -> ensure_is_node(whereis(Node));
 ensure_is_node(Node) -> Node.
+
+% strip
+strip_extraneous_values(Resp) ->
+  case string:tokens(Resp, ":") of
+    ["vote_for", Action]  -> Action;
+    [Action]              -> Action;
+    Else                  -> Else
+  end.
