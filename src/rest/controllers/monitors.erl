@@ -20,7 +20,7 @@ get([]) ->
 get(["list"]) ->
   Monitors = mon_server:list_monitors(),
   JsonMonitors = lists:map(fun({Mon, Types}) ->
-      {Mon, lists:map(fun(T) -> list_to_binary(T) end, Types)}
+      {Mon, lists:map(fun(T) -> utils:turn_to_binary(T) end, Types)}
     end, Monitors),
     
   {?MODULE, {struct, JsonMonitors}};
