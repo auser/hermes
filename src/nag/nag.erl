@@ -105,14 +105,26 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
         % ?TRACE("Resp", [Resp]),
         case string:tokens(Resp, ":") of
           ["vote_for", Action]  -> 
-            ?INFO("Calling action ~p for ~p~n", [Action, erlang:atom_to_list(Mon)]),
-            ElectionValue = athens:call_ambassador_election(Mon, Action),
-            case ElectionValue > 0.5 of
-              true ->
-                ?INFO("Won the election for ~p. Get the lock on the system and call the action!~n", [Action]),
-                ok;
-              _ -> ok
-            end;
+          ElectionName = erlang:list_to_term(lists:append(["hold_election_", Action])),
+          case stoplight_client:lock(ElectionName, ?LOCK_TIMOUT) of
+            {no, _} -> ok;
+            {Resp, _} ->
+              ?INFO("Calling action ~p for ~p~n", [Action, erlang:atom_to_list(Mon)]),
+              ElectionValue = athens:call_ambassador_election(Mon, Action),
+              case ElectionValue > 0.5 of
+                true ->
+                  ?INFO("Won the election for ~p. Get the lock on the system and call the action!~n", [Action]),
+                  ElectionName2 = erlang:list_to_term(lists:append(["run_action", Action])),
+                  case stoplight_client:lock(ElectionName2, ?LOCK_TIMOUT) of
+                    {no, _} -> ok;
+                    {_R, _} -> 
+                      ?INFO("Got the lock on the system for ~p~n", [Action]),
+                      ambassador:ask(Action, []);
+                    _ -> ok
+                  end;
+                _ -> ok
+              end
+          end;
           [Action]              -> ambassador:ask(Action, []);
           _Else                  -> ok % ?INFO("Unhandled Event: ~p~n", [Else])
         end,

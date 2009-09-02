@@ -224,7 +224,7 @@ stop_thrift_client(Args) ->
 build_start_command(Action, Args) ->
   ThriftPort = proplists:get_value(proto_port, Args),
   CloudConfig = proplists:get_value(clouds_config, Args),
-  CloudName = proplists:get_value(cloud_name, Args),
+  % CloudName = proplists:get_value(cloud_name, Args),
   
   ExtraArgs = lists:append([
                       [" --port ", erlang:integer_to_list(ThriftPort)], 

@@ -6,6 +6,7 @@
 -define (DEFAULT_AVERAGE_TIME, 30).
 
 -define (DEFAULT_NAG_DELAY, 10000).
+-define (LOCK_TIMOUT, 600).
 
 -define (FMT_MSG (Msg, Args), lists:flatten([?MODULE, ?LINE, io_lib:format(Msg, Args)])).
 -define (INFO (Msg, Args),    hermes_logger:info(Msg, Args)).
