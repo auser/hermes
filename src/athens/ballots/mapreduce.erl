@@ -102,7 +102,7 @@ ensure_is_node(Node) -> Node.
 % strip
 strip_extraneous_values(Resp) ->
   Response = case Resp of
-    {ok, V} -> V;
+    {ok, [V]} -> V;
     F -> F
   end,
   ?INFO("Response: ~p (from ~p)~n", [Response, Resp]),
