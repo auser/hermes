@@ -110,11 +110,13 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     
     case Out of
       {ok, [Resp]} ->
-        ?TRACE("Resp", [Resp]),
+        % ?TRACE("Resp", [Resp]),
         case string:tokens(Resp, ":") of
-          ["vote_for", Action]  -> athens:call_ambassador_election(Mon, Action);
+          ["vote_for", Action]  -> 
+            ?INFO("Calling action: ", [Mon, Action]);
+            athens:call_ambassador_election(Mon, Action);
           [Action]              -> ambassador:ask(Action, []);
-          Else                  -> ?INFO("Unhandled Event: ~p~n", [Else])
+          Else                  -> ok % ?INFO("Unhandled Event: ~p~n", [Else])
         end,
         % ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
         timer:sleep(1000),
