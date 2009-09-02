@@ -105,7 +105,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
         % ?TRACE("Resp", [Resp]),
         case string:tokens(Resp, ":") of
           ["vote_for", Action]  -> 
-          ElectionName = erlang:list_to_term(lists:append(["hold_election_", Action])),
+          ElectionName = erlang:list_to_atom(lists:append(["hold_election_", Action])),
           case stoplight_client:lock(ElectionName, ?LOCK_TIMOUT) of
             {no, _} -> ok;
             {Resp, _} ->
@@ -114,7 +114,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
               case ElectionValue > 0.5 of
                 true ->
                   ?INFO("Won the election for ~p. Get the lock on the system and call the action!~n", [Action]),
-                  ElectionName2 = erlang:list_to_term(lists:append(["run_action", Action])),
+                  ElectionName2 = erlang:list_to_atom(lists:append(["run_action_", Action])),
                   case stoplight_client:lock(ElectionName2, ?LOCK_TIMOUT) of
                     {no, _} -> ok;
                     {_R, _} -> 
