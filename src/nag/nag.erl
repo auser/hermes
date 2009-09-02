@@ -93,15 +93,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
   end, MonReturn),
   % ?INFO("Time to nag: ~p~n", [Monitors]),
   lists:map(fun(Mon) ->
-    Avg = mon_server:get_average_over(Mon, Interval),
-    % ?INFO("Average: ~p for ~p~n", [Avg, Mon]),
-    % [{"1250201400",0.4}]
-    % Toss out the top 2 values
-    [_|SecondMostAverage] = Avg,
-    [_|ThirdMostAverage] = SecondMostAverage,
-    [LastTuple|_] = ThirdMostAverage,
-    
-    {_Timestamp, Float} = LastTuple,
+    Float = mon_server:get_latest_average_for(Mon),
     % ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
