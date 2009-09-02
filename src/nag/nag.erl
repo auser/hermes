@@ -108,7 +108,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
           ElectionName = erlang:list_to_atom(lists:append(["hold_election_", Action])),
           case stoplight_client:lock(ElectionName, ?LOCK_TIMOUT) of
             {no, _} -> ok;
-            {Resp, _} ->
+            {crit, _} ->
               ?INFO("Calling action ~p for ~p~n", [Action, erlang:atom_to_list(Mon)]),
               ElectionValue = athens:call_ambassador_election(Mon, Action),
               case ElectionValue > 0.5 of
@@ -117,7 +117,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
                   ElectionName2 = erlang:list_to_atom(lists:append(["run_action_", Action])),
                   case stoplight_client:lock(ElectionName2, ?LOCK_TIMOUT) of
                     {no, _} -> ok;
-                    {_R, _} -> 
+                    {crit, _} -> 
                       ?INFO("Got the lock on the system for ~p~n", [Action]),
                       ambassador:ask(Action, []);
                     _ -> ok
