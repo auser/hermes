@@ -16,7 +16,6 @@ submit(M, F, A, Comparison, NodeList) ->
   end)
   ,receive
     {Pid, R} -> 
-      ?INFO("Output on mapreduce: ~p~n", [R]),
       R
   end.
   
@@ -35,7 +34,6 @@ reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
   % Reduce the values
   Acc = dict:fold(fun(_Node, V, FoldAcc) ->
       Value = strip_extraneous_values(V),
-      ?INFO("Folding on value: ~p~n", [Value]),
       O = case Value of
         ComparisonValue -> 1.0;
         _Else -> 0.0
@@ -44,7 +42,6 @@ reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
     end, Acc0, Dict1),
   % Compute the average over the nodes
   TotalAverage = Acc / TotalNumNodes,
-  ?INFO("Map reduce for: ~p => ~p (from ~p)~n", [self(), TotalAverage, ComparisonValue]),
   From ! {self(), TotalAverage}.
 
 %%====================================================================
@@ -105,7 +102,7 @@ strip_extraneous_values(Resp) ->
     {ok, [V]} -> V;
     F -> F
   end,
-  ?INFO("Response: ~p (from ~p)~n", [Response, Resp]),
+  % ?INFO("Response: ~p (from ~p)~n", [Response, Resp]),
   case string:tokens(Response, ":") of
     ["vote_for", Action]  -> Action;
     [Action]              -> Action;

@@ -106,7 +106,13 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
         case string:tokens(Resp, ":") of
           ["vote_for", Action]  -> 
             ?INFO("Calling action ~p for ~p~n", [Action, erlang:atom_to_list(Mon)]),
-            athens:call_ambassador_election(Mon, Action);
+            ElectionValue = athens:call_ambassador_election(Mon, Action),
+            case ElectionValue > 0.5 of
+              true ->
+                ?INFO("Won the election for ~p. Get the lock on the system and call the action!~n", [Action]),
+                ok;
+              _ -> ok
+            end;
           [Action]              -> ambassador:ask(Action, []);
           _Else                  -> ok % ?INFO("Unhandled Event: ~p~n", [Else])
         end,
