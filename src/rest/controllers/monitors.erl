@@ -9,7 +9,6 @@ get([]) ->
       case Monitor of
         unknown_monitor -> unknown_monitor;
         _Else ->
-          ?TRACE("Monitors", [Monitor]),
           O = handle_get_monitor_over_time(Monitor, 600),
           {struct, O}
       end
@@ -41,9 +40,7 @@ get([SuperMonitor]) ->
       nomatch -> false
     end
   end, RelatedMonitors),
-  ?TRACE("Mons", [Mons, Regexp, RelatedMonitors]),
   Vals = handle_get_monitor_over_time({SuperMonitor, Mons}, 600),
-  ?TRACE("Vals", [Vals]),
   {SuperMonitor, {struct, Vals}};
 
 get([SuperMonitor, Monitor]) when is_list(Monitor) -> ?MODULE:get([SuperMonitor, Monitor, "600"]);

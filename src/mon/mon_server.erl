@@ -52,7 +52,7 @@ stop() -> gen_cluster:call(?SERVER, stop).
 %%  monitor given (60 seconds)
 %%--------------------------------------------------------------------
 get_latest_average_for(Monitor) ->
-  Avg = get_average_over(Monitor, 60),
+  Avg = get_average_over(Monitor, ?DEFAULT_AVERAGE_TIME),
   [LastTuple|_] = Avg,
   {_Timestamp, Float} = LastTuple,
   Float.

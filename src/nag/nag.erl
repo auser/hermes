@@ -96,7 +96,10 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     Avg = mon_server:get_average_over(Mon, Interval),
     % ?INFO("Average: ~p for ~p~n", [Avg, Mon]),
     % [{"1250201400",0.4}]
-    [LastTuple|_] = Avg,
+    % Toss out the top 2 values
+    [_|SecondMostAverage] = Avg,
+    [_|ThirdMostAverage] = SecondMostAverage,
+    [LastTuple|_] = ThirdMostAverage,
     
     {_Timestamp, Float} = LastTuple,
     ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
