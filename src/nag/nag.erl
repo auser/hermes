@@ -99,7 +99,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     [LastTuple|_] = Avg,
     
     {_Timestamp, Float} = LastTuple,
-    % ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
+    ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
                                           erlang:float_to_list(Float)
