@@ -93,7 +93,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
   end, MonReturn),
   % ?INFO("Time to nag: ~p~n", [Monitors]),
   lists:map(fun(Mon) ->
-    Float = mon_server:get_latest_average_for(Mon),
+    Float = mon_server:get_latest_average_for(Mon, Interval),
     % ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
@@ -108,7 +108,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
             ?INFO("Calling action ~p for ~p~n", [Action, erlang:atom_to_list(Mon)]),
             athens:call_ambassador_election(Mon, Action);
           [Action]              -> ambassador:ask(Action, []);
-          Else                  -> ok % ?INFO("Unhandled Event: ~p~n", [Else])
+          _Else                  -> ok % ?INFO("Unhandled Event: ~p~n", [Else])
         end,
         % ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
         timer:sleep(1000),

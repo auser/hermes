@@ -16,7 +16,7 @@
 -export ([  
             get_average/1, 
             get_average_over/2,
-            get_latest_average_for/1,
+            get_latest_average_for/1,get_latest_average_for/2,
             list_monitors/0, list_all_monitor_files/0,
             list_related_monitors/1, list_related_monitors/2,
             get_monitors/0,
@@ -51,8 +51,9 @@ stop() -> gen_cluster:call(?SERVER, stop).
 %% Description: Get the latest average for the 
 %%  monitor given (60 seconds)
 %%--------------------------------------------------------------------
-get_latest_average_for(Monitor) ->
-  Avg = mon_server:get_average_over(Mon, ?DEFAULT_AVERAGE_TIME),
+get_latest_average_for(Monitor) -> get_latest_average_for(Monitor, ?DEFAULT_AVERAGE_TIME).
+get_latest_average_for(Monitor, Interval) ->
+  Avg = mon_server:get_average_over(Monitor, Interval),
   % Toss out the top 2 values
   [_|SecondMostAverage] = Avg,
   [_|ThirdMostAverage] = SecondMostAverage,
