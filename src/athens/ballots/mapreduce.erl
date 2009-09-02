@@ -34,6 +34,7 @@ reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
   Dict1 = collect_reductions(TotalNumNodes, Dict0),
   % Reduce the values
   Acc = dict:fold(fun(_Node, Value, FoldAcc) ->
+      ?INFO("Folding on value: ~p~n", [Value]),
       O = case Value of
         ComparisonValue -> 1.0;
         _Else -> 0.0
@@ -42,7 +43,7 @@ reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
     end, Acc0, Dict1),
   % Compute the average over the nodes
   TotalAverage = Acc / TotalNumNodes,
-  ?INFO("Map reduce for: ~p => ~p~n", [self(), TotalAverage]),
+  ?INFO("Map reduce for: ~p => ~p (from ~p)~n", [self(), TotalAverage, ComparisonValue]),
   From ! {self(), TotalAverage}.
 
 %%====================================================================
