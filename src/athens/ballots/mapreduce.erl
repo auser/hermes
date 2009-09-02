@@ -15,7 +15,9 @@ submit(M, F, A, Comparison, NodeList) ->
     reduce(S, M, F, A, Comparison, Acc, Nodes)
   end)
   ,receive
-    {Pid, R} -> R
+    {Pid, R} -> 
+      ?INFO("Output on mapreduce: ~p~n", [R]),
+      R
   end.
   
 reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
@@ -40,6 +42,7 @@ reduce(From, M, F, A, ComparisonValue, Acc0, Nodes) ->
     end, Acc0, Dict1),
   % Compute the average over the nodes
   TotalAverage = Acc / TotalNumNodes,
+  ?INFO("Map reduce for: ~p => ~p~n", [self(), TotalAverage]),
   From ! {self(), TotalAverage}.
 
 %%====================================================================
