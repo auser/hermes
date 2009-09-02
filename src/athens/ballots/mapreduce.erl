@@ -105,6 +105,7 @@ strip_extraneous_values(Resp) ->
     {ok, V} -> V;
     F -> F
   end,
+  ?INFO("Response: ~p (from ~p)~n", [Response, Resp]),
   case string:tokens(Response, ":") of
     ["vote_for", Action]  -> Action;
     [Action]              -> Action;
