@@ -102,7 +102,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     [LastTuple|_] = ThirdMostAverage,
     
     {_Timestamp, Float} = LastTuple,
-    ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
+    % ?TRACE("Asking", [erlang:atom_to_list(Mon), erlang:float_to_list(Float)]),
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
                                           erlang:float_to_list(Float)
@@ -119,6 +119,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
         % ?INFO("VOTE ACTION!: ~p (Load: ~p)~n", [Resp, Float]),
         timer:sleep(1000),
         Resp;
+      {ok, []} -> ok;
       {error, _} -> ok
     end
     end, Monitors),
