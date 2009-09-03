@@ -119,13 +119,10 @@ init([Args]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({cloud_query, CloudName, Fun, [Args]}, _From, #state{thrift_pid = P} = State) ->
-  cloud_query(self(), P, CloudName, Fun, Args),
-  Reply = receive
+  Reply = case cloud_query(P, CloudName, Fun, Args) of
     {ok, {cloudResponse, _BinCloudName, _BinFun, [<<"unhandled monitor">>]}} -> {error, unhandled_monitor};
     {ok, {cloudResponse, _BinCloudName, _BinFun, BinResponse}} -> {ok, utils:turn_to_list(BinResponse)};
     Else -> {error, Else}
-    after 5000 ->
-      {error, no_response}
   end,
   {reply, Reply, State};
   
@@ -242,6 +239,9 @@ build_start_command(Action, Args) ->
 %% Query on the thrift server
 %%====================================================================
 
-cloud_query(From, P, Name, Meth, Args) ->
+cloud_query(P, Name, Meth, Args) ->
   Query = #cloudQuery{name=Name},
-  From ! thrift_client:call(P, run_command, [Query, Meth, Args]).
+  case catch thrift_client:call(P, run_command, [Query, Meth, Args]) of % infinite timeout
+    {timeout, _} -> {error, no_response};
+    E -> E
+  end.
