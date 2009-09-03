@@ -19,6 +19,7 @@
 
 -export ([
           ask/3,
+          run/3,
           stop/0
          ]).
 
@@ -149,7 +150,7 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = Args} = State) -> 
+handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = _Args} = State) -> 
   erlang:demonitor(Ref),
   % case start_thrift_cloud_server(Args) of
   %   {error, Reason} ->
@@ -254,7 +255,5 @@ cloud_query(P, Name, Meth, Args) ->
         {timeout, _} -> {error, timeout};
         E -> {error, E}
       end;
-    E -> 
-      ?ERROR("With cloudQuery: ~p~n", [E]),
-      E
+    E -> E
   end.
