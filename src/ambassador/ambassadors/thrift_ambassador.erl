@@ -245,7 +245,11 @@ build_start_command(Action, Args) ->
 cloud_query(P, Name, Meth, Args) ->
   Query = #cloudQuery{name=Name},
   case catch thrift_client:call(P, run_command, [Query, Meth, Args]) of % infinite timeout
-    {timeout, _} -> {error, no_response};
+    {'EXIT', R} -> 
+      case R of
+        {timeout, _} -> {error, timeout};
+        E -> {error, E}
+      end;
     E -> 
       ?ERROR("With cloudQuery: ~p~n", [E]),
       E
