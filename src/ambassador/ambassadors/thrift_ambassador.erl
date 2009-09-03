@@ -208,9 +208,12 @@ start_thrift_server(Args) ->
   ok.
 
 start_thrift_cloud_server(Args) ->  
-  StartCmd = build_start_command("start", Args),
-  ?INFO("Starting ~p: ~p~n", [?MODULE, StartCmd]),
-  spawn_link(fun() -> os:cmd(StartCmd) end).
+  StartCmd = build_start_command("start", Args),  
+  spawn_link(fun() -> 
+    O = os:cmd(StartCmd),
+    ?INFO("Starting ~p: ~p => ~p~n", [?MODULE, StartCmd, O]),
+    O
+  end).
   
 stop_thrift_client(Args) ->
   StopCmd = build_start_command("stop", Args),
@@ -243,5 +246,7 @@ cloud_query(P, Name, Meth, Args) ->
   Query = #cloudQuery{name=Name},
   case catch thrift_client:call(P, run_command, [Query, Meth, Args]) of % infinite timeout
     {timeout, _} -> {error, no_response};
-    E -> E
+    E -> 
+      ?ERROR("With cloudQuery: ~p~n", [E]),
+      E
   end.
