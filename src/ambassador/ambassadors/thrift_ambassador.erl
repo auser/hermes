@@ -147,14 +147,14 @@ handle_cast(_Msg, State) ->
 %%--------------------------------------------------------------------
 handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = Args} = State) -> 
   erlang:demonitor(Ref),
-  case start_thrift_cloud_server(Args) of
-    {error, Reason} ->
-      ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
-      ok;
-    P ->
-      erlang:monitor(process, P),
-      P
-  end,
+  % case start_thrift_cloud_server(Args) of
+  %   {error, Reason} ->
+  %     ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
+  %     ok;
+  %   P ->
+  %     erlang:monitor(process, P),
+  %     P
+  % end,
   {noreply, State};
   
 handle_info(Info, State) ->
