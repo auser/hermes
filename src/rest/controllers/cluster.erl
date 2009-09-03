@@ -8,7 +8,7 @@ get([]) ->
   % JsonMonitors = lists:map(fun({Mon, Types}) ->
   %     {Mon, lists:map(fun(T) -> utils:turn_binary(T) end, Types)}
   %   end, Monitors),
-  {?MODULE, "cluster"};
+  {?MODULE, 'cluster'};
   % {?MODULE, {struct, [
   %   {"monitors", JsonMonitors }
   % ]}};

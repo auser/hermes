@@ -150,8 +150,8 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = _Args} = State) -> 
-  erlang:demonitor(Ref),
+% handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = _Args} = State) -> 
+  % erlang:demonitor(Ref),
   % case start_thrift_cloud_server(Args) of
   %   {error, Reason} ->
   %     ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
@@ -160,7 +160,7 @@ handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = _Args} = Sta
   %     erlang:monitor(process, P),
   %     P
   % end,
-  {noreply, State};
+  % {noreply, State};
   
 handle_info(Info, State) ->
   ?INFO("Received info in ~p: ~p~n", [?MODULE, Info]),
