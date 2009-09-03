@@ -169,7 +169,7 @@ handle_info(Info, State) ->
 %% The return value is ignored.
 %%--------------------------------------------------------------------
 terminate(Reason, #state{start_args = Args} = _State) ->
-  io:format("Terminating: ~p~n", [Reason]),
+  ?ERROR("~p terminating: ~p~n", [?MODULE, Reason]),
   build_start_command("stop", Args),
   ok.
 
