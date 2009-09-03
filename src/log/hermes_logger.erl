@@ -43,11 +43,11 @@ error(Msg, Args) -> append(lists:flatten(io_lib:format(Msg, Args))).
 info(Msg) -> info(Msg, []).
 info(Msg, Args) -> append(lists:flatten(io_lib:format(Msg, Args))).
 
-append(Log) -> gen_server:call(?SERVER, {append, term_to_binary(Log)}).
-upread(Fun) -> gen_server:call(?SERVER, {upread, Fun}).
+append(Log) -> gen_server:cast(?SERVER, {append, term_to_binary(Log)}).
+upread(Fun) -> gen_server:cast(?SERVER, {upread, Fun}).
 
-print() -> gen_server:call(?SERVER, {print}).
-truncate() -> gen_server:call(?SERVER, truncate).
+print() -> gen_server:cast(?SERVER, {print}).
+truncate() -> gen_server:cast(?SERVER, truncate).
 
 %%====================================================================
 %% gen_server callbacks
