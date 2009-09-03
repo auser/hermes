@@ -43,7 +43,7 @@ error(Msg, Args) -> append(lists:flatten(io_lib:format(Msg, Args))).
 info(Msg) -> info(Msg, []).
 info(Msg, Args) -> append(lists:flatten(io_lib:format(Msg, Args))).
 
-append(Log) -> gen_server:call(?SERVER, {append, Log}).
+append(Log) -> gen_server:call(?SERVER, {append, term_to_binary(Log)}).
 upread(Fun) -> gen_server:call(?SERVER, {upread, Fun}).
 
 print() -> gen_server:call(?SERVER, {print}).
