@@ -164,9 +164,12 @@ get_lock_and_call_action(Action) ->
   case stoplight_client:lock(ElectionName2, ?LOCK_TIMOUT) of
     {no, _} -> ok;
     {crit, _} -> 
-      ?INFO("Got the lock on the system for ~p (~p)~n", [Action, ElectionName2]),
-      O = ambassador:ask(Action, []),
-      ?INFO("Ambassador response from ~p: ~p~n", [Action, O]),
-      O;
+      F = fun() ->
+        ?INFO("Got the lock on the system for ~p (~p)~n", [Action, ElectionName2]),
+        O = ambassador:ask(Action, []),
+        ?INFO("Ambassador response from ~p: ~p~n", [Action, O]),
+        O
+      end,
+      spawn(F);
     _ -> ok
   end.

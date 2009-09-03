@@ -45,8 +45,8 @@
 start_link(Args) ->
   gen_server:start_link({local, ?SERVER}, ?MODULE, [Args], []).
 
-ask(CloudName, Func, Msg) ->
-  gen_server:call(?MODULE, {cloud_query, CloudName, Func, Msg}).
+ask(CloudName, Func, Msg) -> gen_server:call(?MODULE, {cloud_query, CloudName, Func, Msg}).
+run(CloudName, Func, Msg) -> gen_server:cast(?MODULE, {cloud_run, CloudName, Func, Msg}).
 
 %%--------------------------------------------------------------------
 %% Function: stop () -> ok
@@ -136,6 +136,10 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
+handle_cast({cloud_run, CloudName, Fun, [Args]}, #state{thrift_pid = P} = State) ->
+  cloud_query(P, CloudName, Fun, Args),
+  {noreply, State};
+  
 handle_cast(_Msg, State) ->
   {noreply, State}.
 
