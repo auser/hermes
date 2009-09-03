@@ -53,7 +53,7 @@ ask(CloudName, Func, Msg) ->
 %% Description: Stop ourselves and the socket_server
 %%--------------------------------------------------------------------
 stop() ->
-  io:format("Stopping~n"),
+  ?INFO("Stopping ~p~n", [?MODULE]),
   stop_thrift_client(config:read()),
   % thrift_socket_server:stop(get_hostname()),
   ok.
@@ -78,7 +78,7 @@ init([Args]) ->
   
   case start_thrift_cloud_server(Args) of
     {error, Reason} ->
-      io:format("Assuming the thrift_client is already started error: ~p~n", [Reason]),
+      ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
       ok;
     Pid ->
       erlang:monitor(process, Pid),
@@ -149,7 +149,7 @@ handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = Args} = Stat
   erlang:demonitor(Ref),
   case start_thrift_cloud_server(Args) of
     {error, Reason} ->
-      io:format("Assuming the thrift_client is already started error: ~p~n", [Reason]),
+      ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
       ok;
     P ->
       erlang:monitor(process, P),

@@ -63,7 +63,7 @@ handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
     end.
 
 get(Key) ->
-  io:format("Get ~p in ~p~n", [Key, ?MODULE]),
+  ?INFO("Get ~p in ~p~n", [Key, ?MODULE]),
   {ok, <<"Nice">>}.
   
 
