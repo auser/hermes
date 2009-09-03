@@ -62,16 +62,9 @@ truncate() -> gen_server:call(?SERVER, truncate).
 %%--------------------------------------------------------------------
 init(Conf) ->
   FileName = case application:get_env(hermes, log_path) of
+    {ok, undefined} -> get_log_from_config(Conf);
     { ok, Log } ->  Log;
-    undefined -> 
-      case config:get(log_path) of
-        {error, _} -> 
-          case proplists:get_value(log_path, Conf) of
-            {ok, L} -> L;
-            _ -> "logs/hermes.log"
-          end;
-        {ok, V} -> V
-      end
+    undefined -> get_log_from_config(Conf)
   end,
   
   io:format("Logging to file: ~p~n", [FileName]),
@@ -227,3 +220,14 @@ i32(Int) when integer(Int) ->
 getint32(F) ->
     {ok, B} = file:read(F, 4),
     i32(B).
+    
+
+get_log_from_config(Conf) ->
+  case config:get(log_path) of
+    {error, _} -> 
+      case proplists:get_value(log_path, Conf) of
+        {ok, L} -> L;
+        _ -> "logs/hermes.log"
+      end;
+    {ok, V} -> V
+  end.
