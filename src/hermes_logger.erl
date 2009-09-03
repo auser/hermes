@@ -65,7 +65,7 @@ print() ->
 init(Conf) ->
   LogPath = case application:get_env(hermes, log_path) of
     { ok, Log } ->  Log;
-    undefined -> "logs/hermes.log"
+    undefined -> "/var/log/hermes.log"
   end,
   error_logger:logfile({open, LogPath}),
   
