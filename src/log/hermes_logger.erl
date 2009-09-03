@@ -74,6 +74,8 @@ init(Conf) ->
       end
   end,
   
+  io:format("Logging to file: ~p~n", [FileName]),
+  
   case file:open(FileName, [read, write, raw, binary]) of
   {ok, Fd} ->
     {ok, Eof} = file:position(Fd, eof),
