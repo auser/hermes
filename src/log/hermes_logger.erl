@@ -90,18 +90,7 @@ init(Conf) ->
 %%                                      {stop, Reason, Reply, State} |
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
-%%--------------------------------------------------------------------
-handle_call({append, Log}, _From, Fd) ->
-  {reply, log_binary(Fd, Log) , Fd};
-  
-handle_call({upread, Fun}, _From, Fd) ->
-    {reply, upread(Fd, Fun), fd};
-
-handle_call(truncate, _From, Fd) ->
-    file:position(Fd, bof),
-    file:truncate(Fd),
-    {reply, ok, Fd};
-      
+%%--------------------------------------------------------------------     
 handle_call(stop, _From, State) ->
   {stop, normal, ok, State};
   
@@ -115,6 +104,19 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
+handle_cast({append, Log}, Fd) ->
+  log_binary(Fd, Log),
+  {noreply, Fd};
+  
+handle_cast({upread, Fun}, Fd) ->
+  upread(Fd, Fun),
+  {reply, Fd};
+
+handle_cast(truncate, Fd) ->
+    file:position(Fd, bof),
+    file:truncate(Fd),
+    {noreply, Fd};
+
 handle_cast(_Msg, State) ->
   {noreply, State}.
 
