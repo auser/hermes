@@ -11,18 +11,16 @@
 -include ("hermes.hrl").
 
 %% API
--export([start_link/1, stop/1, append/1, print/0, 
+-export([start_link/1, stop/1, append/1, print/0, upread/1,
           error/1,error/2,
-          info/1,info/2
+          info/1,info/2,
+          truncate/0
         ]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {
-            log = []
-        }).
 -define(SERVER, ?MODULE).
 
 %%====================================================================
@@ -40,16 +38,16 @@ stop(_Args) ->
   ok.
 
 error(Msg) -> error(Msg, []).
-error(Msg, Args) -> error_logger:error_msg(lists:flatten(io_lib:format(Msg, Args))).
+error(Msg, Args) -> append(lists:flatten(io_lib:format(Msg, Args))).
 
 info(Msg) -> info(Msg, []).
-info(Msg, Args) -> error_logger:info_msg(lists:flatten(io_lib:format(Msg, Args))).
+info(Msg, Args) -> append(lists:flatten(io_lib:format(Msg, Args))).
 
-append(Log) ->
-  gen_server:call(?SERVER, {append, Log}).
+append(Log) -> gen_server:call(?SERVER, {append, term_to_binary(Log)}).
+upread(Fun) -> gen_server:call(?SERVER, {upread, Fun}).
 
-print() ->
-  gen_server:call(?SERVER, {print}).
+print() -> gen_server:call(?SERVER, {print}).
+truncate() -> gen_server:call(?SERVER, truncate).
 
 %%====================================================================
 %% gen_server callbacks
@@ -63,18 +61,31 @@ print() ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init(Conf) ->
-  LogPath = case application:get_env(hermes, log_path) of
+  FileName = case application:get_env(hermes, log_path) of
     { ok, Log } ->  Log;
-    undefined -> "/var/log/hermes.log"
+    undefined -> 
+      case config:get(log_path) of
+        {error, _} -> 
+          case proplists:get_value(log_path, Conf) of
+            {ok, L} -> L;
+            _ -> "logs/hermes.log"
+          end;
+        {ok, V} -> V
+      end
   end,
-  error_logger:logfile({open, LogPath}),
   
-  Tty = case proplists:get_value(tty, Conf) of
-    undefined -> ?TESTING;
-    V -> V
-  end,
-  error_logger:tty(Tty),
-  {ok, #state{}}.
+  case file:open(FileName, [read, write, raw, binary]) of
+  {ok, Fd} ->
+    {ok, Eof} = file:position(Fd, eof),
+    file:position(Fd, bof),
+    FilePos = position_fd(Fd, 0),
+    maybe_warn(FilePos, Eof),
+    {ok, Fd};
+  {error, Reason} ->
+    warn("Can't open ~p~n", [FileName]),
+    {stop, Reason}
+  end.
+  
 
 %%--------------------------------------------------------------------
 %% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -85,13 +96,20 @@ init(Conf) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({append, Log}, _From, State) ->
-  {reply, ok, #state{log = [Log | State#state.log]}};
-handle_call({print}, _From, State) ->
-  handle_print(State#state.log),
-  {reply, ok, State};
+handle_call({append, Log}, _From, Fd) ->
+  {reply, log_binary(Fd, Log) , Fd};
+  
+handle_call({upread, Fun}, _From, Fd) ->
+    {reply, upread(Fd, Fun), fd};
+
+handle_call(truncate, _From, Fd) ->
+    file:position(Fd, bof),
+    file:truncate(Fd),
+    {reply, ok, Fd};
+      
 handle_call(stop, _From, State) ->
   {stop, normal, ok, State};
+  
 handle_call(_Request, _From, State) ->
   Reply = ok,
   {reply, Reply, State}.
@@ -121,8 +139,8 @@ handle_info(_Info, State) ->
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
-  ok.
+terminate(_Reason, Fd) ->
+  file:close(Fd).
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -134,8 +152,76 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+  
+maybe_warn(FilePos, Eof) ->
+    if
+	FilePos == Eof ->
+	    ok;
+	true ->
+	    warn("~w bytes truncated \n", 
+		 [Eof - FilePos])
+    end.
 
-handle_print([]) -> ok;
-handle_print([H|T]) ->
-  io:format("~p~n", [H]),
-  handle_print(T).
+
+position_fd(Fd, LastPos) ->
+    case catch getint32(Fd) of
+	Int when is_integer(Int) ->
+	    case file:read(Fd, Int) of
+		{ok, B} when size(B) ==  Int ->
+		    position_fd(Fd, LastPos + 4 + Int);
+		_ ->
+		    file:position(Fd, LastPos),
+		    file:truncate(Fd)
+	    end;
+	_ ->
+	    file:position(Fd, LastPos),
+	    file:truncate(Fd),
+	    LastPos
+    end.
+
+log_binary(Fd, Bin) ->
+    Sz = size(Bin),
+    case file:write(Fd, [i32(Sz), Bin]) of
+	ok ->
+	    ok;
+	{error, Reason} ->
+	    warn("Cant't write logfile ~p ", [Reason]),
+	    {error, Reason}
+    end.
+
+
+warn(Fmt, As) ->
+    io:format(user, "hermes_logger: " ++ Fmt, [As]).
+
+
+upread(Fd, Fun) ->		
+    {ok, _Curr} = file:position(Fd, cur),
+    file:position(Fd, bof),
+    upread(Fd, get_term(Fd), Fun).
+
+upread(_Fd, {'EXIT', _}, _Fun) ->
+    ok;
+upread(Fd, Term, Fun) ->
+    Fun(Term),
+    upread(Fd, catch get_term(Fd), Fun).
+
+
+get_term(Fd) ->
+    I = getint32(Fd),
+    {ok, B} = file:read(Fd, I),
+    binary_to_term(B).
+
+
+i32(B) when is_binary(B) ->
+    i32(binary_to_list(B, 1, 4));
+i32([X1, X2, X3, X4]) ->
+    (X1 bsl 24) bor (X2 bsl 16) bor (X3 bsl 8) bor X4;
+i32(Int) when integer(Int) ->
+    [(Int bsr 24) band 255,
+     (Int bsr 16) band 255,
+     (Int bsr  8) band 255,
+     Int band 255].
+         
+getint32(F) ->
+    {ok, B} = file:read(F, 4),
+    i32(B).
