@@ -116,10 +116,14 @@ init([Args]) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
-handle_call({cloud_query, CloudName, Fun, [Args]}, _From, #state{thrift_pid = P} = State) ->
+handle_call({cloud_query, CloudName, Fun, [Args]}, _From, #state{thrift_pid = P, start_args = StartArgs} = State) ->
   Reply = case catch cloud_query(P, CloudName, Fun, Args) of
     {ok, {cloudResponse, _BinCloudName, _BinFun, [<<"unhandled monitor">>]}} -> {error, unhandled_monitor};
     {ok, {cloudResponse, _BinCloudName, _BinFun, BinResponse}} -> {ok, utils:turn_to_list(BinResponse)};
+    % Errors
+    {error, {noproc, Reason}} ->
+      ?ERROR("Cloud thrift server died. Restarting it: ~p~n", [Reason]),
+      start_thrift_cloud_server(StartArgs);
     Else -> 
       ?ERROR("There was an error: ~p~n", [Else]),
       {error, Else}
