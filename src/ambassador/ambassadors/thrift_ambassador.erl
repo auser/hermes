@@ -151,7 +151,11 @@ handle_info({'EXIT', _Pid, _Reason}, #state{start_args = Args} = State) ->
   Port = start_thrift_cloud_server(Args),
   NewState = State#state{port = Port},
   {noreply, NewState};
-  
+
+% The process could not be started, because of some foreign error
+handle_info({_Port,{exit_status,10}}, State) ->
+  {noreply, State};
+
 handle_info(Info, State) ->
   ?INFO("Received info in ~p: ~p~n", [?MODULE, Info]),
   {noreply, State}.
