@@ -31,10 +31,12 @@
 -record(state, {
           start_args,   % args to start with
           thrift_pid,   % thrift client pid
+          port,         % port
           retry_times   % times to retry
        }).
                  
 -define(SERVER, ?MODULE).
+-define(PORT_OPTIONS, [stream, {line, 1024}, binary, exit_status, hide]).
 
 %%====================================================================
 %% API
@@ -77,7 +79,7 @@ init([Args]) ->
   stop_thrift_client(Args),
   timer:sleep(500),
   
-  start_thrift_cloud_server(Args),
+  Port = start_thrift_cloud_server(Args),
   
   {ok, HostName} = get_hostname(),
   BannerArr = [
@@ -101,6 +103,7 @@ init([Args]) ->
   {ok, #state{
     start_args = Args,
     thrift_pid = P,
+    port = Port,
     retry_times = 0
   }}.
 
@@ -202,8 +205,11 @@ start_thrift_server(Args) ->
   ok.
 
 start_thrift_cloud_server(Args) ->  
+  process_flag(trap_exit, true),
   StartCmd = build_start_command("start", Args),
-  start_and_link_thrift_server(StartCmd).
+  Port = open_port({spawn, StartCmd ++ " "}, ?PORT_OPTIONS),
+  Port.
+  % start_and_link_thrift_server(StartCmd).
   % case whereis(cloud_thrift_server) of
   %   undefined -> start_and_link_thrift_server(StartCmd);
   %   Node -> Node
