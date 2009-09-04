@@ -10,7 +10,7 @@ get([]) ->
     end, Monitors),
     
   {?MODULE, {struct,
-    {monitors, JsonMonitors}
+    {monitors, {struct, JsonMonitors}}
   }};
   % {?MODULE, {struct, [
   %   {"monitors", JsonMonitors }
