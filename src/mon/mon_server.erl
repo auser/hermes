@@ -268,7 +268,9 @@ parse_rrd_return_1([[_Desc]|Rest]) ->
  
 collect_rrd_values([]) -> {};
 collect_rrd_values(Str) ->
+  ?INFO("collect_rrd_values: ~p~n", [Str]),
   [Time|[V]] = string:tokens(Str, ":"),
+  ?INFO("collect_rrd_values: ~p: ~p~n", [Time, V]),
   Val = case string:strip(V) of
     "nan" -> 0.0;
     F -> utils:turn_to_float(F)
