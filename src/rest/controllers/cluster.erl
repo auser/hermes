@@ -4,11 +4,13 @@
 
 % /cluster
 get([]) ->
-  % Monitors = mon_server:list_monitors(),
-  % JsonMonitors = lists:map(fun({Mon, Types}) ->
-  %     {Mon, lists:map(fun(T) -> utils:turn_binary(T) end, Types)}
-  %   end, Monitors),
-  {?MODULE, 'cluster'};
+  Monitors = mon_server:list_monitors(),
+  JsonMonitors = lists:map(fun({Mon, Types}) ->
+      {Mon, lists:map(fun(T) -> utils:turn_binary(T) end, Types)}
+    end, Monitors),
+  {?MODULE, {struct, 
+    JsonMonitors
+  }};
   % {?MODULE, {struct, [
   %   {"monitors", JsonMonitors }
   % ]}};
