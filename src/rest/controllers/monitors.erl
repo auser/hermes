@@ -61,9 +61,6 @@ delete(_Path, _Data) -> {"error", <<"unhandled">>}.
 %%====================================================================
 %% Private methods
 %%====================================================================
-change_to_float("nan")  -> 0;
-change_to_float([])     -> 0.0;
-change_to_float(Int)    -> Int.
 
 handle_get_monitor_over_time(MonitorAtom, Time) ->  
   Vals = mon_server:get_average_over(MonitorAtom, Time),
@@ -71,7 +68,7 @@ handle_get_monitor_over_time(MonitorAtom, Time) ->
       {A, ListOfAtoms} = V,
       O = lists:map(fun({T, B}) -> 
           ?INFO("Got back: ~p for ~p (~p)~n", [T, B, ?MODULE]),
-          {T, B}
+          {T, utils:turn_to_float(B)}
         end, ListOfAtoms),
       {A, [{struct, O}]}
     end, Vals),

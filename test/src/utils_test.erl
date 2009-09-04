@@ -52,6 +52,7 @@ turn_to_float_test_() ->
     ?_assertEqual(0.3, utils:turn_to_float("0.3")),
     ?_assertEqual(0.4, utils:turn_to_float(0.4)),
     ?_assertEqual(0.0, utils:turn_to_float("nan")),
-    ?_assertEqual([0.0, 0.0], utils:turn_to_float("nan nan")),
-    ?_assertEqual([0.3, 0.2, 0.9], utils:turn_to_float("0.3 0.2 0.9"))
+    ?_assertEqual([0.0, 0.0], utils:turn_to_float("nan nan"))
+    % ?_assertEqual([0.3, 0.2, 0.9], utils:turn_to_float("0.3,0.2,0.9")),
+    % ?_assertEqual([0.3, 0.2, 0.9], utils:turn_to_float("0.3 0.2 0.9"))
   ].

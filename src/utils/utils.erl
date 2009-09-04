@@ -58,23 +58,33 @@ turn_to_list(Arg)                     -> Arg.
 
 turn_to_float("nan") -> 0.0;
 turn_to_float(Arg) when is_list(Arg) -> 
-  case split_on_and_run(Arg, " ", fun turn_to_float_from_list/1) of
-    false -> split_on_and_run(Arg, ",", fun turn_to_float_from_list/1);
-    _ -> Arg
+  case catch erlang:list_to_float(Arg) of
+    {'EXIT', _} ->
+      case split_on_and_run(Arg, " ", fun turn_to_float_from_list/1) of
+        false -> 
+          case split_on_and_run(Arg, ",", fun turn_to_float_from_list/1) of
+            false -> Arg;
+            E -> erlang:list_to_float(E)
+          end;
+        F -> F
+      end;
+    F -> F
   end;
     
+turn_to_float(Float) when is_float(Float) -> Float;
 turn_to_float(Arg) -> Arg.
 
 split_on_and_run(Arg, Token, F) ->
   case regexp:match(Arg, Token) of
     {match, _, _} ->           
-      {ok, Floats} = regexp:split(Arg, " "),
+      {ok, Floats} = regexp:split(Arg, Token),
       F(Floats);
     _ -> false
   end.
 
 % Turn list
 turn_to_float_from_list(A)          -> turn_to_float_from_list(A, []).
+
 turn_to_float_from_list([], Acc)    -> lists:reverse(Acc);
 turn_to_float_from_list([H|T], Acc) -> turn_to_float_from_list(T, [turn_to_float(H)|Acc]).
 
@@ -95,11 +105,6 @@ jsonify(Body) ->
       Body
     })
   ].
-
-
-change_to_float("nan")  -> 0;
-change_to_float(Int)      -> erlang:float_to_list(Int).
-
 
 %%====================================================================
 %% LISTS
