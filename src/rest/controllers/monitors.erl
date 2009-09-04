@@ -71,7 +71,7 @@ handle_get_monitor_over_time(MonitorAtom, Time) ->
       {A, ListOfAtoms} = V,
       O = lists:map(fun({T, B}) -> 
           ?INFO("Got back: ~p for ~p (~p)~n", [T, B, ?MODULE]),
-          {T, change_to_float(B)}
+          {T, B}
         end, ListOfAtoms),
       {A, [{struct, O}]}
     end, Vals),
