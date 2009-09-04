@@ -180,7 +180,9 @@ get_lock_and_call_action(Action) ->
   end.
   
 format_args_for_thrift(Args) when is_list(Args) ->
+  ?INFO("Formatting args: ~p~n", [Args]),
   [FirstElement|_] = Args,
+  ?INFO("First element: ~p~n", [FirstElement]),
   case FirstElement of
     O when is_binary(O) -> 
       StringElements = lists:map(fun(Bin) -> erlang:binary_to_list(Bin) end, O),
