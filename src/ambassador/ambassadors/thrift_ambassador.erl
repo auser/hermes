@@ -165,10 +165,8 @@ handle_info({'EXIT', _Pid, Reason}, #state{start_args = _Args} = State) ->
 
 % The process could not be started, because of some foreign error
 handle_info({_Port,{exit_status,10}}, State) -> {noreply, State};
-handle_info({_Port,{exit_status,0}}, #state{start_args = Args} = State) -> 
-    Port = start_thrift_cloud_server(Args),
-    NewState = State#state{port = Port},
-    {noreply, NewState};
+handle_info({_Port,{exit_status,0}}, #state{start_args = Args} = State) -> {noreply, State};
+    
 handle_info({Port, {exit_status, Status}}, #state{port=Port}=State) ->
     ?ERROR("OS Process died with status: ~p", [Status]),
     {stop, {exit_status, Status}, State};
