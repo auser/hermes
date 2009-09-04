@@ -157,6 +157,7 @@ handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = Args} = Stat
       ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
       ok;
     P ->
+      ?INFO("Is the process alive: ~p ~p~n", [P, utils:is_process_alive(P)]),
       case utils:is_process_alive(P) of
         true -> erlang:monitor(process, P);
         _ -> ok
