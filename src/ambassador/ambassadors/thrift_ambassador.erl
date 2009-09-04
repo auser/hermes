@@ -202,7 +202,7 @@ start_thrift_server(Args) ->
   ok.
 
 start_thrift_cloud_server(Args) ->  
-  StartCmd = build_start_command("run", Args),
+  StartCmd = build_start_command("start", Args),
   start_and_link_thrift_server(StartCmd).
   % case whereis(cloud_thrift_server) of
   %   undefined -> start_and_link_thrift_server(StartCmd);
