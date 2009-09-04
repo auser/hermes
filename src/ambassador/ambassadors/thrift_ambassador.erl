@@ -120,7 +120,9 @@ handle_call({cloud_query, CloudName, Fun, [Args]}, _From, #state{thrift_pid = P}
   Reply = case catch cloud_query(P, CloudName, Fun, Args) of
     {ok, {cloudResponse, _BinCloudName, _BinFun, [<<"unhandled monitor">>]}} -> {error, unhandled_monitor};
     {ok, {cloudResponse, _BinCloudName, _BinFun, BinResponse}} -> {ok, utils:turn_to_list(BinResponse)};
-    Else -> {error, Else}
+    Else -> 
+      ?ERROR("There was an error: ~p~n", [Else]),
+      {error, Else}
   end,
   {reply, Reply, State};
   
@@ -281,14 +283,18 @@ cloud_query(P, Name, Meth, Args) ->
   end.
   
 
-cloud_run(P, Name, Meth, Args) ->
+cloud_run(P, Name, Meth, Args) ->  
   Query = #cloudQuery{name=Name},
+  ?INFO("Casting the command ~p through ~p~n", [Meth, ?MODULE]),
   case catch thrift_client:call(P, cast_command, [Query, Meth, Args]) of % infinite timeout
     {'EXIT', R} -> 
+      ?ERROR("Got back an EXIT error: ~p~n", [R]),
       case R of
         {timeout, _} -> {error, timeout};
         E -> {error, E}
       end;
-    E -> E
+    E -> 
+      ?INFO("Received ~p from cloud_run~n", [E]),
+      E
   end.
   
