@@ -219,7 +219,7 @@ start_thrift_server(Args) ->
   ok.
 
 start_thrift_cloud_server(Args) ->  
-  StartCmd = build_start_command("start", Args),  
+  StartCmd = build_start_command("run", Args),  
   spawn_link(fun() -> 
     O = os:cmd(StartCmd),
     ?INFO("Starting ~p: ~p => ~p~n", [?MODULE, StartCmd, O]),
