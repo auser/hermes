@@ -147,15 +147,21 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({'EXIT', _Pid, _Reason}, #state{start_args = Args} = State) ->
-  Port = start_thrift_cloud_server(Args),
-  NewState = State#state{port = Port},
-  {noreply, NewState};
-
-% The process could not be started, because of some foreign error
-handle_info({_Port,{exit_status,10}}, State) ->
+handle_info({'EXIT', _Pid, _Reason}, #state{start_args = _Args} = State) ->
+  % Port = start_thrift_cloud_server(Args),
+  % NewState = State#state{port = Port},
   {noreply, State};
 
+% The process could not be started, because of some foreign error
+handle_info({_Port,{exit_status,10}}, State) -> {noreply, State};
+handle_info({Port, {exit_status, Status}}, #state{port=Port}=State) ->
+    ?ERROR("OS Process died with status: ~p", [Status]),
+    {stop, {exit_status, Status}, State};
+
+handle_info({_Port, {data, {eol, Data}}}, State) ->
+  ?INFO("~p~n", [Data]),
+  {noreply, State};
+    
 handle_info(Info, State) ->
   ?INFO("Received info in ~p: ~p~n", [?MODULE, Info]),
   {noreply, State}.
