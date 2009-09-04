@@ -150,17 +150,20 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-% handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = _Args} = State) -> 
-  % erlang:demonitor(Ref),
-  % case start_thrift_cloud_server(Args) of
-  %   {error, Reason} ->
-  %     ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
-  %     ok;
-  %   P ->
-  %     erlang:monitor(process, P),
-  %     P
-  % end,
-  % {noreply, State};
+handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = Args} = State) -> 
+  erlang:demonitor(Ref),
+  case start_thrift_cloud_server(Args) of
+    {error, Reason} ->
+      ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
+      ok;
+    P ->
+      case utils:is_process_alive(P) of
+        true -> erlang:monitor(process, P);
+        _ -> ok
+      end,
+      P
+  end,
+  {noreply, State};
   
 handle_info(Info, State) ->
   ?INFO("Received info in ~p: ~p~n", [?MODULE, Info]),
@@ -195,7 +198,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% TODO: Make a commandline-passable-option
 %%--------------------------------------------------------------------
 get_hostname() -> 
-  "localhost".
+  {ok, "localhost"}.
   % inet:gethostname().
 
 
