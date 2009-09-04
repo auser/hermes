@@ -227,21 +227,21 @@ start_thrift_cloud_server(Args) ->
   %   Node -> Node
   % end.  
   
-start_and_link_thrift_server(StartCmd) ->
-  ?INFO("Starting ~p: ~p~n", [?MODULE, StartCmd]),
-  case (fun() -> os:cmd(StartCmd) end) of
-    {error, Reason} ->
-      ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
-      ok;
-    Pid ->
-      % case utils:is_process_alive(Pid) of
-      %   true -> 
-          % erlang:register(cloud_thrift_server, Pid),
-          % erlang:monitor(process, Pid),
-        % _ -> ok
-      % end,
-      Pid
-  end.
+% start_and_link_thrift_server(StartCmd) ->
+%   ?INFO("Starting ~p: ~p~n", [?MODULE, StartCmd]),
+%   case (fun() -> os:cmd(StartCmd) end) of
+%     {error, Reason} ->
+%       ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
+%       ok;
+%     Pid ->
+%       % case utils:is_process_alive(Pid) of
+%       %   true -> 
+%           % erlang:register(cloud_thrift_server, Pid),
+%           % erlang:monitor(process, Pid),
+%         % _ -> ok
+%       % end,
+%       Pid
+%   end.
   
   
 stop_thrift_client(Args) ->
