@@ -44,7 +44,8 @@ turn_to_atom_test_() ->
 turn_to_list_test_() ->
   [
     ?_assertEqual("a", utils:turn_to_list(a)),
-    ?_assertEqual("a", utils:turn_to_list(<<"a">>))
+    ?_assertEqual("a", utils:turn_to_list(<<"a">>)),
+    ?_assertEqual(["load:null","cpu-idle:null"], utils:turn_to_list([<<"load:null">>,<<"cpu-idle:null">>]))
   ].
   
 turn_to_float_test_() ->

@@ -53,7 +53,7 @@ turn_to_atom(Arg) when is_list(Arg) -> erlang:list_to_atom(Arg).
 
 turn_to_list(Bin) when is_binary(Bin) -> erlang:binary_to_list(Bin);
 turn_to_list(Ato) when is_atom(Ato)   -> erlang:atom_to_list(Ato);
-turn_to_list(Arg) when is_list(Arg)   -> Arg;
+turn_to_list(Arg) when is_list(Arg)   -> [ turn_to_list(A) || A <- Arg ];
 turn_to_list(Arg)                     -> Arg.
 
 turn_to_float("nan") -> 0.0;
