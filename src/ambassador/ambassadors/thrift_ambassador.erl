@@ -118,7 +118,7 @@ init([Args]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({cloud_query, CloudName, Fun, [Args]}, _From, #state{thrift_pid = P, start_args = StartArgs} = State) ->
-  ?INFO("Calling cloud_query: ~p~n", [CloudName]),
+  ?INFO("Calling cloud_query: ~p ~p(~p)~n", [CloudName, Fun, Args]),
   Reply = case catch cloud_query(P, CloudName, Fun, Args) of
     {ok, {cloudResponse, _BinCloudName, _BinFun, [<<"unhandled monitor">>]}} -> {error, unhandled_monitor};
     {ok, {cloudResponse, _BinCloudName, _BinFun, BinResponse}} -> {ok, utils:turn_to_list(BinResponse)};
