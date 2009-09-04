@@ -183,11 +183,12 @@ format_args_for_thrift(Args) when is_list(Args) ->
   ?INFO("Formatting args: ~p~n", [Args]),
   [FirstElement|_] = Args,
   ?INFO("First element: ~p~n", [FirstElement]),
-  case FirstElement of
+  Out = case FirstElement of
     O when is_binary(O) -> 
       StringElements = lists:map(fun(Bin) -> erlang:binary_to_list(Bin) end, Args),
       string:join(StringElements, ", ");
     O -> O
-  end;
-format_args_for_thrift(Args) ->
-  Args.
+  end,
+  utils:turn_binary(Out);
+  
+format_args_for_thrift(Args) -> Args.
