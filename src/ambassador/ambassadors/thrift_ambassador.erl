@@ -147,9 +147,10 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({'EXIT', _Pid, _Reason}, #state{start_args = _Args} = State) ->
+handle_info({'EXIT', _Pid, Reason}, #state{start_args = _Args} = State) ->
   % Port = start_thrift_cloud_server(Args),
   % NewState = State#state{port = Port},
+  ?INFO("Received info in ~p: ~p~n", [?MODULE, Reason]),
   {noreply, State};
 
 % The process could not be started, because of some foreign error
@@ -173,9 +174,8 @@ handle_info(Info, State) ->
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(Reason, #state{start_args = Args} = _State) ->
+terminate(Reason, #state{start_args = _Args} = _State) ->
   ?ERROR("~p terminating: ~p~n", [?MODULE, Reason]),
-  build_start_command("stop", Args),
   ok.
 
 %%--------------------------------------------------------------------
