@@ -95,15 +95,17 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
   lists:map(fun(Mon) ->
     Float = mon_server:get_latest_average_for(Mon, Interval),
     
-    ?TRACE("Asking ambassador", [erlang:atom_to_list(Mon), utils:turn_to_list(Float)]),
+    ?INFO("Asking ambassador", [erlang:atom_to_list(Mon), utils:turn_to_list(Float)]),
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
                                           utils:turn_to_list(Float)
                                         ]),
     
-    case Out of
+    ?INFO("Got back from ambassador: ~p~n", [Out]),
+    case catch Out of
+      {'EXIT', _} -> ok;
       {ok, [Resp]} ->
-        ?TRACE("Resp", [Resp]),
+        ?INFO("Resp", [Resp]),
         case string:tokens(Resp, ":") of
           ["vote_for", Action]  -> 
           ElectionName = erlang:list_to_atom(lists:append(["hold_election_", Action])),
