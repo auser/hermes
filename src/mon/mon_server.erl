@@ -248,7 +248,6 @@ handle_get_average(Module, OverTime) ->
       
       {ok, Fetched} = erlrrd:fetch(M),
       O = parse_rrd_return(Fetched),
-      ?INFO("Got back: ~p from parse_rrd_return~n", [O]),
       O
   end.
 
