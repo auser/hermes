@@ -147,10 +147,10 @@ handle_cast(_Msg, State) ->
 %%                                       {stop, Reason, State}
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
-handle_info({'DOWN',Ref,process, _Pid, normal}, #state{start_args = Args} = State) -> 
-  erlang:demonitor(Ref),
-  start_thrift_cloud_server(Args),
-  {noreply, State};
+handle_info({'EXIT', _Pid, _Reason}, #state{start_args = Args} = State) ->
+  Port = start_thrift_cloud_server(Args),
+  NewState = State#state{port = Port},
+  {noreply, NewState};
   
 handle_info(Info, State) ->
   ?INFO("Received info in ~p: ~p~n", [?MODULE, Info]),
