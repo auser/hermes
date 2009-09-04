@@ -117,7 +117,7 @@ init([Args]) ->
 %% Description: Handling call messages
 %%--------------------------------------------------------------------
 handle_call({cloud_query, CloudName, Fun, [Args]}, _From, #state{thrift_pid = P} = State) ->
-  Reply = case cloud_query(P, CloudName, Fun, Args) of
+  Reply = case catch cloud_query(P, CloudName, Fun, Args) of
     {ok, {cloudResponse, _BinCloudName, _BinFun, [<<"unhandled monitor">>]}} -> {error, unhandled_monitor};
     {ok, {cloudResponse, _BinCloudName, _BinFun, BinResponse}} -> {ok, utils:turn_to_list(BinResponse)};
     Else -> {error, Else}
@@ -150,7 +150,7 @@ handle_cast(_Msg, State) ->
 handle_info({'EXIT', _Pid, Reason}, #state{start_args = _Args} = State) ->
   % Port = start_thrift_cloud_server(Args),
   % NewState = State#state{port = Port},
-  ?INFO("Received info in ~p: ~p~n", [?MODULE, Reason]),
+  ?INFO("Received Exit in ~p: ~p~n", [?MODULE, Reason]),
   {noreply, State};
 
 % The process could not be started, because of some foreign error
