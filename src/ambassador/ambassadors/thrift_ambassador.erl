@@ -286,7 +286,7 @@ cloud_query(P, Name, Meth, Args) ->
 cloud_run(P, Name, Meth, Args) ->  
   Query = #cloudQuery{name=Name},
   ?INFO("Casting the command ~p through ~p~n", [Meth, ?MODULE]),
-  case catch thrift_client:call(P, cast_command, [Query, Meth, Args]) of % infinite timeout
+  case catch thrift_client:cast(P, run_command, [Query, Meth, Args]) of % infinite timeout
     {'EXIT', R} -> 
       ?ERROR("Got back an EXIT error: ~p~n", [R]),
       case R of
