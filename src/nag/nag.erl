@@ -95,6 +95,8 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
   ?INFO("Time to nag with monitors: ~p~n", [Monitors]),
   
   lists:map(fun(Mon) ->
+    
+    ?INFO("get_latest_average_for", [Mon]),
     Float = mon_server:get_latest_average_for(Mon, Interval),
     
     ?INFO("Asking ambassador", [erlang:atom_to_list(Mon), utils:turn_to_list(Float)]),
