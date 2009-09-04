@@ -194,7 +194,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% Description: Quick accessor to local node's hostname
 %% TODO: Make a commandline-passable-option
 %%--------------------------------------------------------------------
-get_hostname() -> inet:gethostname().
+get_hostname() -> 
+  "localhost".
+  % inet:gethostname().
 
 
 %%====================================================================
