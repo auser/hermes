@@ -57,19 +57,23 @@ turn_to_list(Arg) -> erlang:atom_to_list(Arg).
 
 turn_to_float("nan") -> 0.0;
 turn_to_float(Arg) when is_list(Arg) -> 
-  case catch erlang:list_to_float(Arg) of
-    {'EXIT',{badarg, Reason}} ->
-      case regexp:match(Arg, " ") of
-        {match, _, _} ->           
-          {ok, Floats} = regexp:split(Arg, " "),
-          turn_to_float_from_list(Floats, []);
-        _ -> ?TRACE("Uh oh. Error with float", [Arg, Reason])
-      end;
-    F -> F
+  case split_on_and_run(Arg, " ", fun turn_to_float_from_list/1) of
+    false -> split_on_and_run(Arg, ",", fun turn_to_float_from_list/1);
+    _ -> Arg
   end;
+    
 turn_to_float(Arg) -> Arg.
 
+split_on_and_run(Arg, Token, F) ->
+  case regexp:match(Arg, Token) of
+    {match, _, _} ->           
+      {ok, Floats} = regexp:split(Arg, " "),
+      F(Floats);
+    _ -> false
+  end.
+
 % Turn list
+turn_to_float_from_list(A)          -> turn_to_float_from_list(A, []).
 turn_to_float_from_list([], Acc)    -> lists:reverse(Acc);
 turn_to_float_from_list([H|T], Acc) -> turn_to_float_from_list(T, [turn_to_float(H)|Acc]).
 
