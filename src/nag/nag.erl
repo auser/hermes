@@ -97,7 +97,7 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
-                                          utils:turn_binary(Float)
+                                          format_args_for_thrift(utils:turn_binary(Float))
                                         ]),
     
     ?INFO("Got back from ambassador: ~p~n", [Out]),
@@ -175,3 +175,14 @@ get_lock_and_call_action(Action) ->
       spawn(F);
     _ -> ok
   end.
+  
+format_args_for_thrift(Args) when is_list(Args) ->
+  [FirstElement|_] = Args,
+  case FirstElement of
+    O when is_binary(O) -> 
+      StringElements = lists:map(fun(Bin) -> erlang:binary_to_list(Bin) end, O),
+      string:join(StringElements, ", ");
+    O -> O
+  end;
+format_args_for_thrift(Args) ->
+  Args.

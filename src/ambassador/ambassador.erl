@@ -210,5 +210,4 @@ ensure_is_list(Arg) ->
 format_args(Args) ->
   List = ensure_is_list(Args),  
   O = lists:map(fun(Ele) -> ensure_is_list(Ele) end, List),
-  ?INFO("format_args: ~p => ~p~n", [List, O]),
   O.
