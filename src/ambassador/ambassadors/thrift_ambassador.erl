@@ -90,6 +90,7 @@ init([Args]) ->
 
   % O = thrift_client:start_link(HostName, ThriftPort, commandInterface_thrift),
   timer:sleep(1000),
+  ?INFO("Connecting with thrift_client on ~p:~p~n", [HostName, ThriftPort]),
   P = case thrift_client:start_link(HostName, ThriftPort, commandInterface_thrift) of
     {error, R} ->
       ?ERROR("Thrift client could not connect to: ~p, ~p, ~p = ~p~n", [HostName, ThriftPort, commandInterface_thrift, R]),
@@ -130,8 +131,8 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({cloud_run, CloudName, Fun, [Args]}, #state{thrift_pid = P} = State) ->
-  cloud_query(P, CloudName, Fun, Args),
+handle_cast({cloud_run, CloudName, Fun, [Args]}, #state{start_args = StartArgs} = State) ->
+  cloud_run(CloudName, Fun, Args, StartArgs),
   {noreply, State};
   
 handle_cast(_Msg, State) ->
@@ -261,3 +262,10 @@ cloud_query(P, Name, Meth, Args) ->
       end;
     E -> E
   end.
+  
+
+cloud_run(Name, Meth, Args, StartArgs) ->
+  ThriftPort = proplists:get_value(proto_port, StartArgs),
+  NewStartArgs = utils:append({proto_port, ThriftPort+1}),
+  P = start_thrift_cloud_server(NewStartArgs),
+  cloud_query(P, Name, Meth, Args).
