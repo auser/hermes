@@ -55,6 +55,7 @@ get_latest_average_for(Monitor) -> get_latest_average_for(Monitor, ?DEFAULT_AVER
 get_latest_average_for(Monitor, Interval) ->
   Avg = mon_server:get_average_over(Monitor, Interval),
   % Toss out the top 2 values
+  ?INFO("Avg: ~p~n", [Avg]),
   [_|SecondMostAverage] = Avg,
   [_|ThirdMostAverage] = SecondMostAverage,
   [LastTuple|_] = ThirdMostAverage,
@@ -248,6 +249,7 @@ handle_get_average(Module, OverTime) ->
       
       {ok, Fetched} = erlrrd:fetch(M),
       O = parse_rrd_return(Fetched),
+      ?INFO("Got back: ~p from parse_rrd_return~n", [O]),
       O
   end.
 
@@ -268,9 +270,7 @@ parse_rrd_return_1([[_Desc]|Rest]) ->
  
 collect_rrd_values([]) -> {};
 collect_rrd_values(Str) ->
-  ?INFO("collect_rrd_values: ~p~n", [Str]),
   [Time|[V]] = string:tokens(Str, ":"),
-  ?INFO("collect_rrd_values: ~p: ~p~n", [Time, V]),
   Val = case string:strip(V) of
     "nan" -> 0.0;
     F -> utils:turn_to_float(F)

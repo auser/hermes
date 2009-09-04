@@ -92,10 +92,6 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     utils:turn_to_atom(LocalMon)
   end, utils:turn_to_list(MonReturn)),
   
-  ?INFO("Time to nag with monitors: ~p (~p)~n", [Monitors, length(Monitors)]),
-  lists:map(fun(Mon) -> ?INFO("Monitor: ~p~n", [Mon]) end, Monitors),
-  
-  
   lists:map(fun(Mon) ->
     
     ?INFO("get_latest_average_for: ~p~n", [Mon]),
