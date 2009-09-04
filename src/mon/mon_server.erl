@@ -59,7 +59,6 @@ get_latest_average_for(Monitor, Interval) ->
   [_|ThirdMostAverage] = SecondMostAverage,
   [LastTuple|_] = ThirdMostAverage,
   
-  ?INFO("Avg (LastTuple): ~p~n", [LastTuple]),
   {_Timestamp, Float} = LastTuple,
   Float.
 

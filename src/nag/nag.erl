@@ -97,7 +97,9 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
     ?INFO("get_latest_average_for: ~p~n", [Mon]),
     Float = mon_server:get_latest_average_for(Mon, Interval),
     
-    ?INFO("Asking ambassador ~p~n", [erlang:atom_to_list(Mon), utils:turn_to_list(Float)]),
+    ?INFO("Asking ambassador ~p~n", [erlang:atom_to_list(Mon), Float]),
+    ?INFO("into float: ~p~n", [utils:turn_to_list(Float)]),
+    
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
                                           utils:turn_to_list(Float)
