@@ -208,7 +208,7 @@ start_thrift_cloud_server(Args) ->
   end.  
   
 start_and_link_thrift_server(StartCmd) ->
-  ?INFO("Starting ~p: ~p => ~p~n", [?MODULE, StartCmd]),
+  ?INFO("Starting ~p: ~p~n", [?MODULE, StartCmd]),
   case spawn_link(fun() -> os:cmd(StartCmd) end) of
     {error, Reason} ->
       ?INFO("Assuming the thrift_client is already started error: ~p~n", [Reason]),
