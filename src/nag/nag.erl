@@ -95,6 +95,9 @@ handle_info({nag, Interval}, #state{sleep_delay = SleepDelay} = State) ->
   lists:map(fun(Mon) ->
     Float = mon_server:get_latest_average_for(Mon, Interval),
     
+    ?INFO("format_args_for_thrift(utils:turn_binary(Float)): ~p~n", [utils:turn_binary(Float)]),
+    ?INFO("format_args_for_thrift(utils:turn_binary(Float)): ~p~n", [format_args_for_thrift(utils:turn_binary(Float))]),
+    
     Out = ambassador:ask("run_monitor", [
                                           erlang:atom_to_list(Mon),
                                           format_args_for_thrift(utils:turn_binary(Float))
