@@ -55,11 +55,11 @@ get_latest_average_for(Monitor) -> get_latest_average_for(Monitor, ?DEFAULT_AVER
 get_latest_average_for(Monitor, Interval) ->
   Avg = mon_server:get_average_over(Monitor, Interval),
   % Toss out the top 2 values
-  ?INFO("Avg: ~p~n", [Avg]),
   [_|SecondMostAverage] = Avg,
   [_|ThirdMostAverage] = SecondMostAverage,
   [LastTuple|_] = ThirdMostAverage,
   
+  ?INFO("Avg (LastTuple): ~p~n", [LastTuple]),
   {_Timestamp, Float} = LastTuple,
   Float.
 
